@@ -25,6 +25,7 @@ public class XboxOneController extends AbstractXboxController {
             0x20d6, // PowerA
             0x24c6, // PowerA
             0x2e24, // Hyperkin
+            0x3537, // GameSir
     };
 
     private static final byte[] FW2015_INIT = {0x05, 0x20, 0x00, 0x01, 0x00};
@@ -54,6 +55,8 @@ public class XboxOneController extends AbstractXboxController {
             new InitPacket(0x24c6, 0x543a, RUMBLE_INIT2),
             new InitPacket(0x045e, 0x0b12, ONE_S_INIT),//Xbox Wireless Controller, HWID Model 1914
             new InitPacket(0x045e, 0x02fe, ONE_S_INIT),//Xbox Wireless Controller, HWID Model 1914
+            new InitPacket(0x3537, 0x1012, ONE_S_INIT),//小鸡影舞者
+
     };
 
     private byte seqNum = 0;
@@ -143,6 +146,13 @@ public class XboxOneController extends AbstractXboxController {
     }
 
     public static boolean canClaimDevice(UsbDevice device) {
+//        LimeLog.info("UsbDevice->vid:" + device.getVendorId());
+//        LimeLog.info("UsbDevice->count:" + device.getInterfaceCount());
+//        if(device.getInterfaceCount()>0){
+//            LimeLog.info("UsbDevice->0:" + device.getInterface(0).getInterfaceClass());
+//            LimeLog.info("UsbDevice->0:" + device.getInterface(0).getInterfaceSubclass());
+//            LimeLog.info("UsbDevice->0:" + device.getInterface(0).getInterfaceProtocol());
+//        }
         for (int supportedVid : SUPPORTED_VENDORS) {
             if (device.getVendorId() == supportedVid &&
                     device.getInterfaceCount() >= 1 &&
