@@ -213,7 +213,7 @@
         <CheckBoxPreference
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:defaultValue="true"
+            android:defaultValue="false"
             android:dependency="checkbox_show_onscreen_controls"
             android:key="checkbox_show_guide_button"
             android:summary="@string/summary_show_guide_button"

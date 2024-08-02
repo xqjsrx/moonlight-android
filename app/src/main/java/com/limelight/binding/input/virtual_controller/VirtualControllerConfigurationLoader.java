@@ -429,7 +429,7 @@ public class VirtualControllerConfigurationLoader {
 
         if(config.showGuideButton){
             controller.addElement(createDigitalButton(VirtualControllerElement.EID_GDB,
-                            ControllerPacket.SPECIAL_BUTTON_FLAG, 0, 1, "GUIDE", -1, controller, context),
+                            ControllerPacket.SPECIAL_BUTTON_FLAG, 0, 1, "GUIDE", -1, -1,controller, context),
                     screenScale(GUIDE_X, height)+ rightDisplacement,
                     screenScale(GUIDE_Y, height),
                     screenScale(START_BACK_WIDTH, height),
