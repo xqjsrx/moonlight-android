@@ -2,12 +2,20 @@ package com.limelight;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.content.Context;
+import android.content.DialogInterface;
 import android.content.SharedPreferences;
+import android.os.Build;
 import android.os.Handler;
 import android.preference.PreferenceManager;
 import android.text.TextUtils;
+import android.view.Gravity;
 import android.view.KeyEvent;
+import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
+import android.widget.LinearLayout;
+import android.widget.SeekBar;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.limelight.binding.input.GameInputDevice;
@@ -282,9 +290,12 @@ public class GameMenu {
                 () -> game.showHideVirtualController()));
         options.add(new MenuOption(getString(R.string.game_menu_switch_virtual_keyboard_model), true,
                 () -> game.showHidekeyBoardLayoutController()));
-
         options.add(new MenuOption(getString(R.string.game_menu_switch_touch_sensitivity_model), true,
                 () -> game.switchTouchSensitivity()));
+        options.add(new MenuOption(getString(R.string.game_menu_switch_touch_sensitivity_update_x), true,
+                () -> showSetSensitivityDialog("touchX")));
+        options.add(new MenuOption(getString(R.string.game_menu_switch_touch_sensitivity_update_y), true,
+                () -> showSetSensitivityDialog("touchY")));
 
         if (device != null) {
             options.addAll(device.getGameMenuOptions());
@@ -293,5 +304,90 @@ public class GameMenu {
         options.add(new MenuOption(getString(R.string.game_menu_cancel), null));
 
         showMenuDialog("游戏快捷菜单", options.toArray(new MenuOption[options.size()]));
+    }
+
+
+    public void showSetSensitivityDialog(String key) {
+        Context context=game;
+        int step = 10;
+        AlertDialog.Builder builder = new AlertDialog.Builder(context);
+        builder.setTitle("调整触摸灵敏度");
+        // 动态创建布局
+        LinearLayout layout = new LinearLayout(context);
+        layout.setOrientation(LinearLayout.VERTICAL);
+        layout.setPadding(30, 30, 30, 30);
+
+        // 创建TextView用于显示SeekBar的值
+        final TextView valueText = new TextView(context);
+        valueText.setGravity(Gravity.CENTER_HORIZONTAL);
+        valueText.setTextSize(32);
+        layout.addView(valueText, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT));
+
+        // 创建SeekBar
+        final SeekBar seekBar = new SeekBar(context);
+        seekBar.setMax(800 / step);
+        // seekBar.setMax(getResources().getInteger(R.integer.seekbar_touch_sensitivity));
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            seekBar.setMin(10 / step);
+        }
+        layout.addView(seekBar, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT));
+
+        // 从配置中获取初始值
+        int initialValue;
+        switch (key) {
+            case "touchX":
+                initialValue = game.prefConfig.touchSensitivityX;
+                builder.setTitle("调整触摸灵敏度X轴(当前界面生效)");
+                break;
+            case "touchY":
+                initialValue = game.prefConfig.touchSensitivityY;
+                builder.setTitle("调整触摸灵敏度Y轴(当前界面生效)");
+                break;
+            default:
+                initialValue = 100;
+                break;
+        }
+        seekBar.setProgress(initialValue / step);
+        valueText.setText(initialValue+"%");
+
+        seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                valueText.setText(progress * step +"%");
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+            }
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+            }
+        });
+
+        builder.setView(layout);
+
+        builder.setPositiveButton("确定", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                // 保存修改后的值
+                int newValue = seekBar.getProgress() * step;
+                switch (key) {
+                    case "touchX":
+                        game.prefConfig.touchSensitivityX = newValue;
+                        break;
+                    case "touchY":
+                        game.prefConfig.touchSensitivityY = newValue;
+                        break;
+                }
+            }
+        });
+
+        builder.setNegativeButton("取消", null);
+
+        builder.create().show();
     }
 }

@@ -14,6 +14,17 @@ public class SensitivityBean {
    private float lastRelativelyX =-1;
    private float lastRelativelyY =-1;
 
+   //按下的坐标
+   private float startDownX;
+
+   public float getStartDownX() {
+      return startDownX;
+   }
+
+   public void setStartDownX(float startDownX) {
+      this.startDownX = startDownX;
+   }
+
    public float getLastAbsoluteX() {
       return lastAbsoluteX;
    }

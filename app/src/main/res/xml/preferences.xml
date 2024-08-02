@@ -334,6 +334,12 @@
             \n软键盘、性能信息、触控模式切换、发送特殊按键"
             android:defaultValue="true"/>
 
+        <Preference
+            android:key="pref_axi_test"
+            android:title="阿西西调试页面"
+            android:summary="测试手柄震动及其他内容。"
+            />
+
         <CheckBoxPreference
             android:key="checkbox_enable_sbs"
             android:title="Side-By-Side模式"
@@ -464,12 +470,6 @@
             android:summary="多点触控模式，玩游戏时，可能某些游戏灵敏度调节不能满足需求，可使用此选项修改视野的灵敏度。"
             android:text="%"
             android:title="屏幕灵敏度调整Y轴" />
-
-        <Preference
-            android:key="pref_axi_test"
-            android:title="阿西西调试页面"
-            android:summary="测试手柄震动及其他内容。"
-            />
 
         <com.limelight.preferences.SeekBarPreference
             android:key="seekbar_touchpad_sensitivity_opacity"

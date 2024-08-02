@@ -132,7 +132,7 @@ public class Game extends Activity implements SurfaceHolder.Callback,
 
     private KeyBoardLayoutController keyBoardLayoutController;
 
-    private PreferenceConfiguration prefConfig;
+    public PreferenceConfiguration prefConfig;
     private SharedPreferences tombstonePrefs;
 
     private NvConnection conn;
@@ -1714,30 +1714,48 @@ public class Game extends Activity implements SurfaceHolder.Callback,
         float[] normalized=new float[2];
         normalized[0]=normalizedX;
         normalized[1]=normalizedY;
-
-        //如果不是全局模式 并且 坐标 不在右边 则返回
-        if(!prefConfig.touchSensitivityGlobal&&normalizedX<getResources().getDisplayMetrics().widthPixels/2){
-            return normalized;
+        //记录按下的坐标
+        if (event.getActionMasked() == MotionEvent.ACTION_DOWN ||event.getActionMasked()==MotionEvent.ACTION_POINTER_DOWN) {
+            SensitivityBean bean=new SensitivityBean();
+            bean.setStartDownX(normalizedX);
+            sensitivityMap.put(String.valueOf(event.getPointerId(pointerIndex)),bean);
         }
+        //抬起的时候，恢复初始化状态
+        if (event.getActionMasked() == MotionEvent.ACTION_UP||event.getActionMasked() == MotionEvent.ACTION_POINTER_UP) {
+            sensitivityMap.remove(String.valueOf(event.getPointerId(pointerIndex)));
+        }
+        //移动
         if (event.getActionMasked() == MotionEvent.ACTION_MOVE) {
             SensitivityBean bean=sensitivityMap.get(String.valueOf(event.getPointerId(pointerIndex)));
-            if(bean==null){
-                bean=new SensitivityBean();
+            //不是全局模式 或者 按下时坐标 不在右边 则返回
+            if(!prefConfig.touchSensitivityGlobal&&(bean==null||bean.getStartDownX()<streamView.getWidth()/2f)){
+                return normalized;
             }
+            float dx = 0;
+            float dy = 0;
             if(bean.getLastAbsoluteX() !=-1){
-                float dx=normalizedX- bean.getLastAbsoluteX();
-                float dy=normalizedY- bean.getLastAbsoluteY();
+                dx=normalizedX- bean.getLastAbsoluteX();
+                dy=normalizedY- bean.getLastAbsoluteY();
                 dx*=0.01f*prefConfig.touchSensitivityX;//灵敏度
                 dy*=0.01f*prefConfig.touchSensitivityY;
                 normalizedX= bean.getLastRelativelyX() +dx;
                 normalizedY= bean.getLastRelativelyY() +dy;
             }
             if(prefConfig.touchSensitivityRotationAuto){
-                if(normalizedX>=streamView.getWidth()){
-                    normalizedX=streamView.getWidth()/2.0f;
-                }
-                if(normalizedY>=streamView.getHeight()){
-                    normalizedY=streamView.getHeight()/2.0f;
+                int w = streamView.getWidth();
+                int h = streamView.getHeight();
+                if (normalizedX > w || normalizedX < 0 || normalizedY > h || normalizedY < 0) {
+                    normalizedX -= dx;
+                    normalizedY -= dy;
+                    conn.sendTouchEvent(MoonBridge.LI_TOUCH_EVENT_UP, event.getPointerId(pointerIndex),
+                            normalizedX / w, normalizedY / h,
+                            0.5f, 0.5f, 0.5f, (short) 0);
+                    conn.sendTouchEvent(MoonBridge.LI_TOUCH_EVENT_DOWN, event.getPointerId(pointerIndex),
+                            0.5f, 0.5f,
+                            0.5f, 0.5f, 0.5f, (short) 0);
+                    normalizedX = w / 2f + dx;
+                    normalizedY = h / 2f + dy;
+
                 }
             }
             bean.setLastAbsoluteX(event.getX(pointerIndex));
@@ -1745,10 +1763,6 @@ public class Game extends Activity implements SurfaceHolder.Callback,
             bean.setLastRelativelyX(normalizedX);
             bean.setLastRelativelyY(normalizedY);
             sensitivityMap.put(String.valueOf(event.getPointerId(pointerIndex)),bean);
-        }
-        //抬起的时候，恢复初始化状态
-        if (event.getActionMasked() == MotionEvent.ACTION_UP||event.getActionMasked() == MotionEvent.ACTION_POINTER_UP) {
-            sensitivityMap.remove(String.valueOf(event.getPointerId(pointerIndex)));
         }
         normalized[0]=normalizedX;
         normalized[1]=normalizedY;

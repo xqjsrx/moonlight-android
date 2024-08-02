@@ -307,7 +307,9 @@
     <string name="game_menu_switch_keyboard_model">(显示/隐藏)特殊按键</string>
     <string name="game_menu_switch_virtual_model">(显示/隐藏)虚拟手柄</string>
     <string name="game_menu_switch_virtual_keyboard_model">(显示/隐藏)虚拟全键盘</string>
-    <string name="game_menu_switch_touch_sensitivity_model">触控灵敏度切换</string>
+    <string name="game_menu_switch_touch_sensitivity_model">(开启/禁用)触控灵敏度</string>
+    <string name="game_menu_switch_touch_sensitivity_update_x">触控灵敏度修改X轴</string>
+    <string name="game_menu_switch_touch_sensitivity_update_y">触控灵敏度修改Y轴</string>
 
 
     <string name="game_menu_toggle_mouse_on">Enable Controller Mouse Emulation</string>
