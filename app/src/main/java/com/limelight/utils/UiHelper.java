@@ -13,8 +13,10 @@ import android.content.res.Configuration;
 import android.graphics.Insets;
 import android.os.Build;
 import android.os.LocaleList;
+import android.support.annotation.NonNull;
 import android.util.TypedValue;
 import android.view.View;
+import android.view.Window;
 import android.view.WindowInsets;
 import android.view.WindowManager;
 
@@ -262,5 +264,19 @@ public class UiHelper {
 
     public static float dpToPx(Context context, float dp) {
         return TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, dp, context.getResources().getDisplayMetrics());
+    }
+
+    public static void setStatusBarLightMode(@NonNull final Window window,
+                                             final boolean isLightMode) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            View decorView = window.getDecorView();
+            int vis = decorView.getSystemUiVisibility();
+            if (isLightMode) {
+                vis |= View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
+            } else {
+                vis &= ~View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
+            }
+            decorView.setSystemUiVisibility(vis);
+        }
     }
 }

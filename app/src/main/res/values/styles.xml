@@ -43,4 +43,11 @@
         <attr name="aperture_middle_color" format="color" />
     </declare-styleable>
 
+
+    <style name="BaseActivityTheme" parent="AppTheme">
+        <!-- All customizations that are NOT specific to a particular API-level can go here. -->
+        <item name="android:windowActionBar">false</item>
+        <item name="android:windowNoTitle">true</item>
+    </style>
+
 </resources>

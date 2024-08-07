@@ -194,6 +194,10 @@ public class PreferenceConfiguration {
 
     public int touchPadYSensitity;
 
+    //鼠标触控板模式灵敏度x轴
+    public int mouseTouchPadSensitityX;
+    public int mouseTouchPadSensitityY;
+
     //多点触控模式
     public boolean enableMultiTouchScreen;
 
@@ -737,6 +741,9 @@ public class PreferenceConfiguration {
         config.enableVirtualControllerMotion=prefs.getBoolean("checkbox_enable_virtual_motion",false);
 
         config.enableCutoutModeVideo=prefs.getBoolean("checkbox_cutout_mode_video",false);
+
+        config.mouseTouchPadSensitityX=prefs.getInt("seekbar_mouse_touchpad_sensitivity_x_opacity",100);
+        config.mouseTouchPadSensitityY=prefs.getInt("seekbar_mouse_touchpad_sensitivity_y_opacity",100);
 
         config.absoluteMouseMode = prefs.getBoolean(ABSOLUTE_MOUSE_MODE_PREF_STRING, DEFAULT_ABSOLUTE_MOUSE_MODE);
         config.enableAudioFx = prefs.getBoolean(ENABLE_AUDIO_FX_PREF_STRING, DEFAULT_ENABLE_AUDIO_FX);

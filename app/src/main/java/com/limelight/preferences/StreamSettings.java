@@ -83,6 +83,8 @@ public class StreamSettings extends Activity {
         setContentView(R.layout.activity_stream_settings);
 
         UiHelper.notifyNewRootView(this);
+
+        UiHelper.setStatusBarLightMode(getWindow(),true);
     }
 
     @Override

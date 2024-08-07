@@ -128,6 +128,7 @@
             android:name=".preferences.StreamSettings"
             android:resizeableActivity="true"
             android:enableOnBackInvokedCallback="true"
+            android:theme="@style/BaseActivityTheme"
             android:configChanges="mcc|mnc|touchscreen|keyboard|keyboardHidden|navigation|screenLayout|fontScale|uiMode|orientation|screenSize|smallestScreenSize|layoutDirection"
             android:label="Streaming Settings">
             <meta-data android:name="WindowManagerPreference:FreeformWindowSize" android:value="system-default" />
@@ -216,7 +217,7 @@
 
         <activity android:name=".AxiTestActivity"
             android:launchMode="singleTask"
-            android:theme="@style/StreamTheme"/>
+            android:theme="@style/BaseActivityTheme"/>
 
         <!-- 无障碍 实体键盘 屏蔽某些快捷键 -->
         <service

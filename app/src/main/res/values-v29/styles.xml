@@ -5,4 +5,18 @@
         <!-- Avoid some systems like MIUI which break the visibility of games title -->
         <item name="android:forceDarkAllowed">false</item>
     </style>
+
+    <style name="BaseActivityTheme" parent="android:Theme.Material.Light">
+        <!-- All customizations that are NOT specific to a particular API-level can go here. -->
+        <item name="android:windowActionBar">false</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <!-- Avoid some systems like MIUI which break the visibility of games title -->
+        <item name="android:forceDarkAllowed">false</item>
+    </style>
+<!--    <style name="StreamTheme" parent="BaseActivityTheme">-->
+<!--        <item name="android:windowBackground">@android:color/transparent</item>-->
+<!--    </style>-->
+
 </resources>

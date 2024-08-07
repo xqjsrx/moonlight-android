@@ -480,22 +480,22 @@
             android:title="屏幕灵敏度调整Y轴" />
 
         <com.limelight.preferences.SeekBarPreference
-            android:key="seekbar_touchpad_sensitivity_opacity"
+            android:key="seekbar_mouse_touchpad_sensitivity_x_opacity"
             seekbar:min="10"
             seekbar:step="10"
             android:max="300"
             android:defaultValue="100"
-            android:summary="适用于鼠标触控板模式及虚拟特殊按键触控板控件；\n两者共用一个灵敏度数值，但是灵敏度表现可能不一样。\n有人两个一起用吗？"
+            android:summary="适用于鼠标触控板模式"
             android:text="%"
             android:title="触控板灵敏度X轴" />
 
         <com.limelight.preferences.SeekBarPreference
-            android:key="seekbar_touchpad_sensitivity_y_opacity"
+            android:key="seekbar_mouse_touchpad_sensitivity_y_opacity"
             seekbar:min="10"
             seekbar:step="10"
             android:max="300"
             android:defaultValue="100"
-            android:summary="适用于鼠标触控板模式及虚拟特殊按键触控板控件；\n两者共用一个灵敏度数值，但是灵敏度表现可能不一样。\n有人两个一起用吗？"
+            android:summary="适用于鼠标触控板模式"
             android:text="%"
             android:title="触控板灵敏度Y轴" />
 
@@ -568,6 +568,27 @@
             android:title="普通按钮为方形按钮"
             android:summary="虚拟按钮形状为方形按钮，默认为圆形。"
             android:defaultValue="false" />
+
+
+        <com.limelight.preferences.SeekBarPreference
+            android:key="seekbar_touchpad_sensitivity_opacity"
+            seekbar:min="10"
+            seekbar:step="10"
+            android:max="300"
+            android:defaultValue="100"
+            android:summary="适用于虚拟特殊按键触控板控件。"
+            android:text="%"
+            android:title="触控板控件灵敏度X轴" />
+
+        <com.limelight.preferences.SeekBarPreference
+            android:key="seekbar_touchpad_sensitivity_y_opacity"
+            seekbar:min="10"
+            seekbar:step="10"
+            android:max="300"
+            android:defaultValue="100"
+            android:summary="适用于虚拟特殊按键触控板控件。"
+            android:text="%"
+            android:title="触控板控件灵敏度Y轴" />
 
         <com.limelight.preferences.ConfirmDeleteKeyboardPreference
             android:title="重置屏幕虚拟按键布局"

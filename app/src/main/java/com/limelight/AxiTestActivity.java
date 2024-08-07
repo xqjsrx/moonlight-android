@@ -29,6 +29,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.limelight.utils.DeviceUtils;
+import com.limelight.utils.UiHelper;
 
 import org.w3c.dom.Text;
 
@@ -58,6 +59,9 @@ public class AxiTestActivity extends Activity implements View.OnClickListener {
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_axitest);
+
+        UiHelper.setStatusBarLightMode(getWindow(),true);
+
         tx_gamepad_info = findViewById(R.id.tx_game_pad_info);
         TextView tx_content=findViewById(R.id.tx_content);
         bt_vibrator=findViewById(R.id.bt_vibrator);

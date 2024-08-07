@@ -279,7 +279,7 @@ public class RelativeTouchContext implements TouchContext {
                                 (short) targetView.getHeight());
                     }
                     else {
-                        conn.sendMouseMove((short) (deltaX*prefConfig.touchPadSensitivity*0.01f), (short) (deltaY*prefConfig.touchPadYSensitity*0.01f));
+                        conn.sendMouseMove((short) (deltaX*prefConfig.mouseTouchPadSensitityX*0.01f), (short) (deltaY*prefConfig.mouseTouchPadSensitityY*0.01f));
                     }
                 }
 
