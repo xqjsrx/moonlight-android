@@ -296,10 +296,18 @@ public class GameMenu {
                 () -> showSetSensitivityDialog("touchX")));
         options.add(new MenuOption(getString(R.string.game_menu_switch_touch_sensitivity_update_y), true,
                 () -> showSetSensitivityDialog("touchY")));
-
+        options.add(new MenuOption("横竖屏切换", true,
+                () -> game.switchLandscapePortraitScreen()));
+        options.add(new MenuOption("(开启/关闭)画面移动&缩放", true,
+                () -> game.screenMoveZoom()));
         if (device != null) {
             options.addAll(device.getGameMenuOptions());
         }
+
+        options.add(new MenuOption(getString(R.string.game_menu_quit_steaming), () -> {
+            game.isQuitSteamingFlag=true;
+            game.disconnect();
+        }));
 
         options.add(new MenuOption(getString(R.string.game_menu_cancel), null));
 

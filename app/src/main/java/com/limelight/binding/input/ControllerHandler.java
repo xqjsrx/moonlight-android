@@ -919,7 +919,7 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
         if (context.rightStickXAxis != -1 && context.rightStickYAxis != -1) {
             context.rightStickDeadzoneRadius = (float) stickDeadzone;
         }
-
+        //todo --trigger
         if (context.leftTriggerAxis != -1 && context.rightTriggerAxis != -1) {
             InputDevice.MotionRange ltRange = getMotionRangeForJoystickAxis(dev, context.leftTriggerAxis);
             InputDevice.MotionRange rtRange = getMotionRangeForJoystickAxis(dev, context.rightTriggerAxis);
@@ -927,11 +927,13 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
             // It's important to have a valid deadzone so controller packet batching works properly
             context.triggerDeadzone = Math.max(Math.abs(ltRange.getFlat()), Math.abs(rtRange.getFlat()));
 
-            // For triggers without (valid) deadzones, we'll use 13% (around XInput's default)
-            if (context.triggerDeadzone < 0.13f ||
-                context.triggerDeadzone > 0.30f)
-            {
-                context.triggerDeadzone = 0.13f;
+            if(!prefConfig.disableTriggerDeadzone){
+                // For triggers without (valid) deadzones, we'll use 13% (around XInput's default)
+                if (context.triggerDeadzone < 0.13f ||
+                        context.triggerDeadzone > 0.30f)
+                {
+                    context.triggerDeadzone = 0.13f;
+                }
             }
         }
 

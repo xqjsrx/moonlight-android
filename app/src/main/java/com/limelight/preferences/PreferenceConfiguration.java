@@ -223,6 +223,9 @@ public class PreferenceConfiguration {
     //自由摇杆固定键程
     public boolean senableNewAnalogStickOpacityFixed;
 
+    //启动自定义配置文件
+    public boolean enableCustomKeyboardFile;
+
     //VR模式
     public boolean enableSbs;
     public boolean bindAllUsb;
@@ -249,6 +252,21 @@ public class PreferenceConfiguration {
 
     //填充刘海区域
     public boolean enableCutoutModeVideo;
+
+    //部分页面主题色白色
+    public boolean uiThemeColorWhite;
+
+    //五指打开输入法软键盘
+    public boolean enableFiveFingersOperate;
+
+    //启用悬浮球
+    public boolean enableAXFloating;
+
+    //悬浮球操作
+    public boolean enableAXFloatingOperate;
+
+    //禁用扳机死区
+    public boolean disableTriggerDeadzone;
 
     public static boolean isNativeResolution(int width, int height) {
         // It's not a native resolution if it matches an existing resolution option
@@ -742,8 +760,18 @@ public class PreferenceConfiguration {
 
         config.enableCutoutModeVideo=prefs.getBoolean("checkbox_cutout_mode_video",false);
 
+        config.enableCustomKeyboardFile=prefs.getBoolean("checkbox_enable_custom_axi_keyboard_file",false);
+
         config.mouseTouchPadSensitityX=prefs.getInt("seekbar_mouse_touchpad_sensitivity_x_opacity",100);
         config.mouseTouchPadSensitityY=prefs.getInt("seekbar_mouse_touchpad_sensitivity_y_opacity",100);
+
+        config.uiThemeColorWhite=prefs.getBoolean("checkbox_ui_theme_white",true);
+        config.enableFiveFingersOperate=prefs.getBoolean("checkbox_five_fingers_operate",true);
+
+        config.enableAXFloating=prefs.getBoolean("checkbox_enable_ax_floating",false);
+        config.enableAXFloatingOperate=prefs.getBoolean("checkbox_enable_ax_floating_operate",false);
+
+        config.disableTriggerDeadzone=prefs.getBoolean("checkbox_disable_trigger_deadzone",false);
 
         config.absoluteMouseMode = prefs.getBoolean(ABSOLUTE_MOUSE_MODE_PREF_STRING, DEFAULT_ABSOLUTE_MOUSE_MODE);
         config.enableAudioFx = prefs.getBoolean(ENABLE_AUDIO_FX_PREF_STRING, DEFAULT_ENABLE_AUDIO_FX);

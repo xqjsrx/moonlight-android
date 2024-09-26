@@ -9,6 +9,7 @@ import com.limelight.Game;
 import com.limelight.GameSbs;
 import com.limelight.R;
 import com.limelight.ShortcutTrampoline;
+import com.limelight.StreamReqBean;
 import com.limelight.binding.PlatformBinding;
 import com.limelight.computers.ComputerManagerService;
 import com.limelight.nvstream.http.ComputerDetails;
@@ -139,6 +140,56 @@ public class ServerHelper {
                         message = parent.getResources().getString(R.string.applist_quit_success) + " " + app.getAppName();
                     } else {
                         message = parent.getResources().getString(R.string.applist_quit_fail) + " " + app.getAppName();
+                    }
+                } catch (HostHttpResponseException e) {
+                    if (e.getErrorCode() == 599) {
+                        message = "This session wasn't started by this device," +
+                                " so it cannot be quit. End streaming on the original " +
+                                "device or the PC itself. (Error code: "+e.getErrorCode()+")";
+                    }
+                    else {
+                        message = e.getMessage();
+                    }
+                } catch (UnknownHostException e) {
+                    message = parent.getResources().getString(R.string.error_unknown_host);
+                } catch (FileNotFoundException e) {
+                    message = parent.getResources().getString(R.string.error_404);
+                } catch (IOException | XmlPullParserException e) {
+                    message = e.getMessage();
+                    e.printStackTrace();
+                } finally {
+                    if (onComplete != null) {
+                        onComplete.run();
+                    }
+                }
+
+                final String toastMessage = message;
+                parent.runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        Toast.makeText(parent, toastMessage, Toast.LENGTH_LONG).show();
+                    }
+                });
+            }
+        }).start();
+    }
+
+    public static void doQuit(final Activity parent,
+                              final StreamReqBean reqBean,
+                              final Runnable onComplete) {
+        Toast.makeText(parent, parent.getResources().getString(R.string.applist_quit_app) + " " + reqBean.getAppName() + "...", Toast.LENGTH_SHORT).show();
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                NvHTTP httpConn;
+                String message;
+                try {
+                    httpConn = new NvHTTP(reqBean.getActiveAddress(), reqBean.getHttpsPort(),
+                            reqBean.getUniqueId(), reqBean.getServerCert(), PlatformBinding.getCryptoProvider(parent));
+                    if (httpConn.quitApp()) {
+                        message = parent.getResources().getString(R.string.applist_quit_success) + " " + reqBean.getAppName();
+                    } else {
+                        message = parent.getResources().getString(R.string.applist_quit_fail) + " " + reqBean.getAppName();
                     }
                 } catch (HostHttpResponseException e) {
                     if (e.getErrorCode() == 599) {

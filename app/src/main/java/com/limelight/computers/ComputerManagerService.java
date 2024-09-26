@@ -364,31 +364,32 @@ public class ComputerManagerService extends Service {
                     }
                 }
             }
+        }
 
-            // Perform the STUN request if we're not on a VPN or if we bound to a network
-            if (!activeNetworkIsVpn || boundToNetwork) {
-                String stunResolvedAddress = NvConnection.findExternalAddressForMdns("stun.moonlight-stream.org", 3478);
-                if (stunResolvedAddress != null) {
-                    // We don't know for sure what the external port is, so we will have to guess.
-                    // When we contact the PC (if we haven't already), it will update the port.
-                    details.remoteAddress = new ComputerDetails.AddressTuple(stunResolvedAddress, details.guessExternalPort());
-                }
-            }
-
-            // Unbind from the network
-            if (boundToNetwork) {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                    connMgr.bindProcessToNetwork(null);
-                } else {
-                    ConnectivityManager.setProcessDefaultNetwork(null);
-                }
-            }
-
-            // Unlock the network state
-            if (activeNetworkIsVpn) {
-                defaultNetworkLock.unlock();
+        // Perform the STUN request if we're not on a VPN or if we bound to a network
+        if (!activeNetworkIsVpn || boundToNetwork) {
+            String stunResolvedAddress = NvConnection.findExternalAddressForMdns("stun.moonlight-stream.org", 3478);
+            if (stunResolvedAddress != null) {
+                // We don't know for sure what the external port is, so we will have to guess.
+                // When we contact the PC (if we haven't already), it will update the port.
+                details.remoteAddress = new ComputerDetails.AddressTuple(stunResolvedAddress, details.guessExternalPort());
             }
         }
+
+        // Unbind from the network
+        if (boundToNetwork) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                connMgr.bindProcessToNetwork(null);
+            } else {
+                ConnectivityManager.setProcessDefaultNetwork(null);
+            }
+        }
+
+        // Unlock the network state
+        if (activeNetworkIsVpn) {
+            defaultNetworkLock.unlock();
+        }
+
     }
 
     private MdnsDiscoveryListener createDiscoveryListener() {

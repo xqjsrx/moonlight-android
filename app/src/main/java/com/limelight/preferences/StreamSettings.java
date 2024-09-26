@@ -74,6 +74,9 @@ public class StreamSettings extends Activity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && !PreferenceConfiguration.readPreferences(this).uiThemeColorWhite) {
+            setTheme(R.style.AppTheme);
+        }
         super.onCreate(savedInstanceState);
 
         previousPrefs = PreferenceConfiguration.readPreferences(this);
@@ -84,7 +87,9 @@ public class StreamSettings extends Activity {
 
         UiHelper.notifyNewRootView(this);
 
-        UiHelper.setStatusBarLightMode(getWindow(),true);
+        if (previousPrefs.uiThemeColorWhite) {
+            UiHelper.setStatusBarLightMode(getWindow(),true);
+        }
     }
 
     @Override
@@ -755,6 +760,17 @@ public class StreamSettings extends Activity {
                     return false;
                 }
             });
+            findPreference("import_keyboard_json_file").setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
+                @Override
+                public boolean onPreferenceClick(Preference preference) {
+                    Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+                    intent.addCategory(Intent.CATEGORY_OPENABLE);
+                    intent.setType("application/json");
+                    startActivityForResult(intent, READ_REQUEST_VIRTUAL_BUTTON_CODE);
+                    return false;
+                }
+            });
+
 
 
             findPreference("export_keyboard_file").setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
@@ -907,6 +923,9 @@ public class StreamSettings extends Activity {
 
         int READ_DATA_KEY_REQUEST_CODE=1005;
 
+        int READ_REQUEST_VIRTUAL_BUTTON_CODE=1006;
+
+
         @Override
         public void onActivityResult(int requestCode, int resultCode, Intent data) {
             super.onActivityResult(requestCode, resultCode, data);
@@ -1002,6 +1021,22 @@ public class StreamSettings extends Activity {
                     Uri uri = data.getData();
                     File dataBaseFile= null;
                     String displayName = "client.key";
+                    dataBaseFile=new File(getActivity().getFilesDir().getAbsolutePath(), displayName);
+                    FileUriUtils.copyUriToInternalStorage(getActivity(),uri,dataBaseFile);
+                    Toast.makeText(getActivity(),"导入成功!",Toast.LENGTH_SHORT).show();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    Toast.makeText(getActivity(),"出错啦~"+e.getMessage(),Toast.LENGTH_SHORT).show();
+                }
+                return;
+
+            }
+
+            if (requestCode == READ_REQUEST_VIRTUAL_BUTTON_CODE && resultCode == Activity.RESULT_OK &&data.getData()!=null) {
+                try {
+                    Uri uri = data.getData();
+                    File dataBaseFile= null;
+                    String displayName = "axi_keyboard.json";
                     dataBaseFile=new File(getActivity().getFilesDir().getAbsolutePath(), displayName);
                     FileUriUtils.copyUriToInternalStorage(getActivity(),uri,dataBaseFile);
                     Toast.makeText(getActivity(),"导入成功!",Toast.LENGTH_SHORT).show();

@@ -56,6 +56,12 @@
             android:title="填充刘海区域"
             android:defaultValue="false" />
 
+        <CheckBoxPreference
+            android:key="checkbox_ui_theme_white"
+            android:title="部分页面主题色为白色"
+            android:summary="安卓10及以上生效"
+            android:defaultValue="true" />
+
     </PreferenceCategory>
     <PreferenceCategory android:title="@string/category_audio_settings">
         <ListPreference
@@ -142,6 +148,13 @@
             android:title="@string/title_checkbox_gamepad_motion_fallback"
             android:summary="@string/summary_checkbox_gamepad_motion_fallback"
             android:defaultValue="false" />
+
+        <CheckBoxPreference
+            android:key="checkbox_disable_trigger_deadzone"
+            android:title="禁用默认13%的手柄扳机死区"
+            android:summary="勾选后 手柄扳机死区 Moonlight不做限制【某些ASUS Gamepad设备除外】。"
+            android:defaultValue="false"/>
+
     </PreferenceCategory>
     <PreferenceCategory android:title="@string/category_input_settings"
         android:key="category_input_settings">
@@ -158,6 +171,13 @@
             android:key="checkbox_mouse_local_cursor"
             android:title="使用本地鼠标光标"
             android:summary="默认外接物理鼠标的光标会被捕获，此选项可显示安卓系统光标"
+            android:defaultValue="false" />
+
+
+        <CheckBoxPreference
+            android:key="checkbox_five_fingers_operate"
+            android:title="快速打开软键盘"
+            android:summary="使用五根手指点击屏幕，快速打开安卓系统输入法。\n默认触控板模式三指打开输入法。"
             android:defaultValue="false" />
 
 <!--        <CheckBoxPreference-->
@@ -377,6 +397,19 @@
             android:summary="如果你的JoyCon无法使用或识别按键有问题，可以尝试开启此功能。适配Android 10及以上"
             android:defaultValue="false"/>
 
+        <CheckBoxPreference
+            android:key="checkbox_enable_ax_floating"
+            android:title="启用悬浮球（Beta）"
+            android:summary="开启后，点击打开快捷菜单。"
+            android:defaultValue="false"/>
+
+        <CheckBoxPreference
+            android:key="checkbox_enable_ax_floating_operate"
+            android:title="悬浮球点击操作"
+            android:dependency="checkbox_enable_ax_floating"
+            android:summary="切换为快速打开输入法软键盘"
+            android:defaultValue="false"/>
+
         <com.limelight.preferences.SeekBarPreference
             android:key="seekbar_keyboard_axi_opacity"
             seekbar:min="0"
@@ -563,6 +596,18 @@
             android:defaultValue="false" />
 
         <CheckBoxPreference
+            android:key="checkbox_enable_custom_axi_keyboard_file"
+            android:title="启用自定义虚拟按钮配置文件"
+            android:summary="优先使用导入的keyboards.json文件。"
+            android:defaultValue="false" />
+
+        <Preference
+            android:key="import_keyboard_json_file"
+            android:title="导入虚拟按钮配置文件"
+            android:summary="会覆盖替换掉APP内置默认的keyboards.json文件\n旧版本只能修改APK文件重新打包。"
+            />
+
+        <CheckBoxPreference
             android:key="checkbox_enable_keyboard_square"
             android:dependency="checkbox_enable_keyboard"
             android:title="普通按钮为方形按钮"
@@ -590,6 +635,7 @@
             android:text="%"
             android:title="触控板控件灵敏度Y轴" />
 
+
         <com.limelight.preferences.ConfirmDeleteKeyboardPreference
             android:title="重置屏幕虚拟按键布局"
             android:summary="初始化特殊按键布局（重置默认选择的那套布局方案）"
@@ -603,14 +649,14 @@
         <Preference
             android:key="import_keyboard_file"
             android:title="导入配置文件"
-            android:summary="选择一个配置文件，覆盖默认选择的布局方案。"
+            android:summary="这是导入按钮位置相关配置\n选择一个配置文件，覆盖默认选择的布局方案。"
             android:dependency="checkbox_enable_keyboard"
             />
 
         <Preference
             android:key="export_keyboard_file"
             android:title="导出配置文件"
-            android:summary="导出默认选择的布局方案"
+            android:summary="导出默认选择的布局方案，此处是按钮位置、大小等配置"
             android:dependency="checkbox_enable_keyboard"
             />
 

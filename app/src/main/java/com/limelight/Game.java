@@ -34,6 +34,9 @@ import com.limelight.preferences.GlPreferences;
 import com.limelight.preferences.PreferenceConfiguration;
 import com.limelight.ui.GameGestures;
 import com.limelight.ui.StreamView;
+import com.limelight.ui.floatingview.AXFloatingMagnetView;
+import com.limelight.ui.floatingview.AXFloatingView;
+import com.limelight.ui.floatingview.AXFloatingViewListener;
 import com.limelight.utils.Dialog;
 import com.limelight.utils.ServerHelper;
 import com.limelight.utils.ShortcutHelper;
@@ -205,6 +208,8 @@ public class Game extends Activity implements SurfaceHolder.Callback,
     public static final String EXTRA_SERVER_CERT = "ServerCert";
 
     private ViewParent rootView;
+
+    private StreamReqBean streamReqBean;
 
     @SuppressLint("MissingInflatedId")
     @Override
@@ -556,6 +561,13 @@ public class Game extends Activity implements SurfaceHolder.Callback,
                 .setPersistGamepadsAfterDisconnect(!prefConfig.multiController)
                 .build();
 
+        streamReqBean=new StreamReqBean();
+        streamReqBean.setAppName(appName);
+        streamReqBean.setServerCert(serverCert);
+        streamReqBean.setHttpsPort(httpsPort);
+        streamReqBean.setUniqueId(uniqueId);
+        streamReqBean.setActiveAddress(new ComputerDetails.AddressTuple(host, port));
+        streamReqBean.setCryptoProvider(PlatformBinding.getCryptoProvider(this));
         // Initialize the connection
         conn = new NvConnection(getApplicationContext(),
                 new ComputerDetails.AddressTuple(host, port),
@@ -598,6 +610,11 @@ public class Game extends Activity implements SurfaceHolder.Callback,
                     usbDriverServiceConnection, Service.BIND_AUTO_CREATE);
         }
 
+        //悬浮球
+        if(prefConfig.enableAXFloating){
+            initFloatingView();
+        }
+
         if (!decoderRenderer.isAvcSupported()) {
             if (spinner != null) {
                 spinner.dismiss();
@@ -617,6 +634,8 @@ public class Game extends Activity implements SurfaceHolder.Callback,
         if(prefConfig.enableExDisplay){
             showSecondScreen();
         }
+
+//        initFloatingView();
 
     }
 
@@ -701,16 +720,10 @@ public class Game extends Activity implements SurfaceHolder.Callback,
         }
         else {
             //强制竖屏模式
-            if(prefConfig.enablePortrait){
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
-                    setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_USER_PORTRAIT);
-                }
-                else {
-                    setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT);
-                }
+            if(prefConfig.enablePortrait|| isPortrait){
+                setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT);
                 return;
             }
-
             // For regular displays, we always request landscape
             setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_USER_LANDSCAPE);
         }
@@ -719,6 +732,7 @@ public class Game extends Activity implements SurfaceHolder.Callback,
     @Override
     public void onConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
+
 
         // Set requested orientation for possible new screen size
         setPreferredOrientationForCurrentDisplay();
@@ -1264,7 +1278,14 @@ public class Game extends Activity implements SurfaceHolder.Callback,
 
             displayedFailureDialog = true;
             stopConnection();
-
+            if(isQuitSteamingFlag){
+                new Handler().postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        quitSteaming();
+                    }
+                },100); // 延时100毫秒
+            }
             if (prefConfig.enableLatencyToast) {
                 int averageEndToEndLat = decoderRenderer.getAverageEndToEndLatency();
                 int averageDecoderLat = decoderRenderer.getAverageDecoderLatency();
@@ -1770,11 +1791,11 @@ public class Game extends Activity implements SurfaceHolder.Callback,
     }
 
 
-    private float[] getStreamViewRelativeNormalizedXY(View view, MotionEvent event, int pointerIndex) {
+    private float[] getStreamViewRelativeNormalizedXY(View view, MotionEvent event, int pointerIndex,boolean isTouch) {
         float normalizedX = event.getX(pointerIndex);
         float normalizedY = event.getY(pointerIndex);
         //开启自定义修改触控灵敏度 并且 数值不为100
-        if(prefConfig.enableTouchSensitivity&&(prefConfig.touchSensitivityX !=100||prefConfig.touchSensitivityY!=100)){
+        if(isTouch&&prefConfig.enableTouchSensitivity&&(prefConfig.touchSensitivityX !=100||prefConfig.touchSensitivityY!=100)){
             float[] normalized=getStreamViewRelativeSensitivityXY(event,normalizedX,normalizedY,pointerIndex);
             normalizedX=normalized[0];
             normalizedY=normalized[1];
@@ -1782,8 +1803,20 @@ public class Game extends Activity implements SurfaceHolder.Callback,
         // For the containing background view, we must subtract the origin
         // of the StreamView to get video-relative coordinates.
         if (view != streamView) {
-            normalizedX -= streamView.getX();
-            normalizedY -= streamView.getY();
+            //缩放画面
+            if(streamView.getScaleX()>1.0f){
+                int[] loc1 = new int[2];
+                int[] loc2 = new int[2];
+                view.getLocationInWindow(loc1);
+                streamView.getLocationInWindow(loc2);
+                int dx=loc2[0] - loc1[0];
+                int dy=loc2[1] - loc1[1];
+                normalizedX = (normalizedX - dx) / streamView.getScaleX();
+                normalizedY = (normalizedY - dy) / streamView.getScaleY();
+            }else{
+                normalizedX -= streamView.getX();
+                normalizedY -= streamView.getY();
+            }
         }
 
         normalizedX = Math.max(normalizedX, 0.0f);
@@ -1882,15 +1915,21 @@ public class Game extends Activity implements SurfaceHolder.Callback,
         // the orientation), so rotate the orientation angle by 90 degrees.
         float[] contactAreaMinorCartesian = polarToCartesian(contactAreaMinor, (float)(orientation + (Math.PI / 2)));
 
+        // 获取视图的缩放因子
+        float scaleX = streamView.getScaleX();
+        float scaleY = streamView.getScaleY();
+
         // Normalize the contact area to the stream view size
-        contactAreaMajorCartesian[0] = Math.min(Math.abs(contactAreaMajorCartesian[0]), streamView.getWidth()) / streamView.getWidth();
-        contactAreaMinorCartesian[0] = Math.min(Math.abs(contactAreaMinorCartesian[0]), streamView.getWidth()) / streamView.getWidth();
-        contactAreaMajorCartesian[1] = Math.min(Math.abs(contactAreaMajorCartesian[1]), streamView.getHeight()) / streamView.getHeight();
-        contactAreaMinorCartesian[1] = Math.min(Math.abs(contactAreaMinorCartesian[1]), streamView.getHeight()) / streamView.getHeight();
+        contactAreaMajorCartesian[0] = Math.min(Math.abs(contactAreaMajorCartesian[0]) / scaleX, streamView.getWidth()) / streamView.getWidth();
+        contactAreaMinorCartesian[0] = Math.min(Math.abs(contactAreaMinorCartesian[0]) /scaleX, streamView.getWidth()) / streamView.getWidth();
+        contactAreaMajorCartesian[1] = Math.min(Math.abs(contactAreaMajorCartesian[1]) /scaleY, streamView.getHeight()) / streamView.getHeight();
+        contactAreaMinorCartesian[1] = Math.min(Math.abs(contactAreaMinorCartesian[1]) /scaleY, streamView.getHeight()) / streamView.getHeight();
 
         // Convert the normalized values back into polar coordinates
         return new float[] { cartesianToR(contactAreaMajorCartesian), cartesianToR(contactAreaMinorCartesian) };
     }
+
+
 
     private boolean sendPenEventForPointer(View view, MotionEvent event, byte eventType, byte toolType, int pointerIndex) {
         byte penButtons = 0;
@@ -1909,7 +1948,7 @@ public class Game extends Activity implements SurfaceHolder.Callback,
             }
         }
 
-        float[] normalizedCoords = getStreamViewRelativeNormalizedXY(view, event, pointerIndex);
+        float[] normalizedCoords = getStreamViewRelativeNormalizedXY(view, event, pointerIndex,false);
         float[] normalizedContactArea = getStreamViewNormalizedContactArea(event, pointerIndex);
         return conn.sendPenEvent(eventType, toolType, penButtons,
                 normalizedCoords[0], normalizedCoords[1],
@@ -1974,7 +2013,7 @@ public class Game extends Activity implements SurfaceHolder.Callback,
     }
 
     private boolean sendTouchEventForPointer(View view, MotionEvent event, byte eventType, int pointerIndex) {
-        float[] normalizedCoords = getStreamViewRelativeNormalizedXY(view, event, pointerIndex);
+        float[] normalizedCoords = getStreamViewRelativeNormalizedXY(view, event, pointerIndex,true);
         float[] normalizedContactArea = getStreamViewNormalizedContactArea(event, pointerIndex);
         return conn.sendTouchEvent(eventType, event.getPointerId(pointerIndex),
                 normalizedCoords[0], normalizedCoords[1],
@@ -2017,7 +2056,6 @@ public class Game extends Activity implements SurfaceHolder.Callback,
         if (!grabbedInput) {
             return false;
         }
-
         int eventSource = event.getSource();
         int deviceSources = event.getDevice() != null ? event.getDevice().getSources() : 0;
         if ((eventSource & InputDevice.SOURCE_CLASS_JOYSTICK) != 0) {
@@ -2253,6 +2291,34 @@ public class Game extends Activity implements SurfaceHolder.Callback,
                 else {
                     xOffset = 0.f;
                     yOffset = 0.f;
+                }
+
+                //五指打开输入法
+                if(prefConfig.enableFiveFingersOperate){
+                    switch (event.getActionMasked()){
+                        case MotionEvent.ACTION_POINTER_DOWN:
+                            if(event.getPointerCount() == 5){
+                                threeFingerDownTime = event.getEventTime();
+                                // Cancel the first and second touches to avoid
+                                // erroneous events
+                                for (TouchContext aTouchContext : touchContextMap) {
+                                    aTouchContext.cancelTouch();
+                                }
+                                return true;
+                            }
+                            break;
+                        case MotionEvent.ACTION_UP:
+                        case MotionEvent.ACTION_POINTER_UP:
+                            if (event.getPointerCount() == 1 &&
+                                    (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU || (event.getFlags() & MotionEvent.FLAG_CANCELED) == 0)) {
+                                // All fingers up
+                                if (event.getEventTime() - threeFingerDownTime < THREE_FINGER_TAP_THRESHOLD) {
+                                    // This is a 3 finger tap to bring up the keyboard
+                                    toggleKeyboard();
+                                    return true;
+                                }
+                            }
+                    }
                 }
 
                 // TODO: Re-enable native touch when have a better solution for handling
@@ -3049,6 +3115,32 @@ public class Game extends Activity implements SurfaceHolder.Callback,
     }
 
 
+    public boolean isPortrait;
+
+    //横竖屏切换
+    public void switchLandscapePortraitScreen(){
+        if(getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE){
+            isPortrait =true;
+            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT);
+        }else{
+            isPortrait =false;
+            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_USER_LANDSCAPE);
+        }
+    }
+
+    //画面平移缩放
+    public void screenMoveZoom(){
+        if(!streamView.isEnableZoomAndPan()){
+            disableMouseModel=true;
+            streamView.setEnableZoomAndPan(true);
+            Toast.makeText(this,"开启画面平移&缩放！",Toast.LENGTH_SHORT).show();
+            return;
+        }
+        disableMouseModel=false;
+        streamView.setEnableZoomAndPan(false);
+        Toast.makeText(this,"关闭画面平移&缩放！",Toast.LENGTH_SHORT).show();
+    }
+
     public void disconnect() {
         finish();
     }
@@ -3101,4 +3193,32 @@ public class Game extends Activity implements SurfaceHolder.Callback,
         });
         streamView.setClipToOutline(true);
     }
+
+    //是否退出串流
+    public boolean isQuitSteamingFlag;
+
+    public void quitSteaming(){
+        ServerHelper.doQuit(this,streamReqBean, null);
+    }
+
+    private void initFloatingView(){
+        AXFloatingView floatingView = new AXFloatingView(this);
+        floatingView.setIconImage(R.drawable.app_icon);
+        floatingView.setLayoutParams(AXFloatingView.getLayParams());
+        ViewGroup decorViewGroup= (ViewGroup) getWindow().getDecorView();
+        decorViewGroup.addView(floatingView);
+        floatingView.setFloatingViewListener(new AXFloatingViewListener() {
+            @Override
+            public void onClick(AXFloatingMagnetView magnetView) {
+                if(prefConfig.enableAXFloatingOperate){
+                    toggleKeyboard();
+                    return;
+                }
+                showGameMenu(null);
+            }
+        });
+//        streamView.setZOrderOnTop(true);
+//        streamView.setZOrderMediaOverlay(true);
+    }
+
 }
