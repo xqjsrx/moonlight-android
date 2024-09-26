@@ -207,6 +207,10 @@ public class UsbDriverService extends Service implements UsbDriverListener {
 
             // Add this controller to the list
             controllers.add(controller);
+        }else{
+            if (stateListener != null) {
+                stateListener.onUSBInfo(device);
+            }
         }
     }
 
@@ -306,6 +310,10 @@ public class UsbDriverService extends Service implements UsbDriverListener {
             if (shouldClaimDevice(dev, prefConfig.bindAllUsb)) {
                 // Start the process of claiming this device
                 handleUsbDeviceState(dev);
+            }else{
+                if (stateListener != null) {
+                    stateListener.onUSBInfo(dev);
+                }
             }
         }
     }
@@ -350,5 +358,6 @@ public class UsbDriverService extends Service implements UsbDriverListener {
     public interface UsbDriverStateListener {
         void onUsbPermissionPromptStarting();
         void onUsbPermissionPromptCompleted();
+        default void onUSBInfo(UsbDevice device){}
     }
 }

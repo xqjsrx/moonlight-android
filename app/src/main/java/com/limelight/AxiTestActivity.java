@@ -1,37 +1,43 @@
 package com.limelight;
 
+import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.AlertDialog;
-import android.app.ProgressDialog;
+import android.app.Service;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.hardware.Sensor;
+import android.hardware.usb.UsbDevice;
 import android.media.AudioAttributes;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.CombinedVibration;
+import android.os.IBinder;
 import android.os.VibrationAttributes;
 import android.os.VibrationEffect;
 import android.os.Vibrator;
+import android.os.VibratorManager;
 import android.support.annotation.Nullable;
-import android.text.InputFilter;
-import android.text.InputType;
-import android.text.TextUtils;
 import android.view.InputDevice;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
-import android.widget.EditText;
-import android.widget.ProgressBar;
 import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
-
+import com.limelight.binding.input.driver.AbstractController;
+import com.limelight.binding.input.driver.UsbDriverListener;
+import com.limelight.binding.input.driver.UsbDriverService;
+import com.limelight.binding.input.driver.Xbox360Controller;
+import com.limelight.binding.input.driver.Xbox360WirelessDongle;
+import com.limelight.binding.input.driver.XboxOneController;
+import com.limelight.preferences.PreferenceConfiguration;
 import com.limelight.utils.DeviceUtils;
 import com.limelight.utils.UiHelper;
-
-import org.w3c.dom.Text;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -52,16 +58,22 @@ public class AxiTestActivity extends Activity implements View.OnClickListener {
 
     private Vibrator vibratorOnline;
 
+    private VibratorManager vibratorManager;
+
     private Button bt_vibrator_value;
 
     private int simulatedAmplitude=220;
+
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && !PreferenceConfiguration.readPreferences(this).uiThemeColorWhite) {
+            setTheme(R.style.AppTheme);
+        }
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_axitest);
-
-        UiHelper.setStatusBarLightMode(getWindow(),true);
-
+        if (PreferenceConfiguration.readPreferences(this).uiThemeColorWhite) {
+            UiHelper.setStatusBarLightMode(getWindow(),true);
+        }
         tx_gamepad_info = findViewById(R.id.tx_game_pad_info);
         TextView tx_content=findViewById(R.id.tx_content);
         bt_vibrator=findViewById(R.id.bt_vibrator);
@@ -78,6 +90,7 @@ public class AxiTestActivity extends Activity implements View.OnClickListener {
         sb.append("\tapi版本："+Build.VERSION.SDK_INT);
         sb.append("\n内核版本："+kernelVersion);
         sb.append("\n品牌型号："+DeviceUtils.getManufacturer()+"\t-\t"+DeviceUtils.getModel());
+        sb.append("\n覆盖USB驱动状态："+PreferenceConfiguration.readPreferences(this).bindAllUsb);
         tx_content.setText(sb.toString());
 
         boolean hasVibrator=((Vibrator)getSystemService(Context.VIBRATOR_SERVICE)).hasVibrator();
@@ -85,6 +98,7 @@ public class AxiTestActivity extends Activity implements View.OnClickListener {
         bt_vibrator.setText("测试设备震动（"+content+"）");
 
         showSimlateAmp();
+        startUsb();
     }
 
     private void showSimlateAmp(){
@@ -99,12 +113,50 @@ public class AxiTestActivity extends Activity implements View.OnClickListener {
         if(vibrator!=null){
             vibrator.cancel();
         }
+
+        if(vibratorManager!=null){
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                vibratorManager.cancel();
+            }
+        }
     }
 
     @Override
     public void onClick(View v) {
 
+        if(v.getId()==R.id.bt_vibrator_gamepad_usb){
+
+            if(controllerUsbs.isEmpty()){
+                Toast.makeText(AxiTestActivity.this, "内置USB驱动不支持此手柄！", Toast.LENGTH_LONG).show();
+                return;
+            }
+            if(!(controllerUsbs.get(0) instanceof XboxOneController)) {
+                controllerUsbs.get(0).rumble((short) -256,(short) -256);
+                return;
+            }
+            String[] titles=new String[]{"握把震动","扳机震动"};
+            new AlertDialog.Builder(this).setItems(titles, new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    dialog.dismiss();
+                    switch (which){
+                        case 0:
+                            controllerUsbs.get(0).rumble((short) -simulatedAmplitude,(short) -simulatedAmplitude);
+                            break;
+                        case 1:
+                            controllerUsbs.get(0).rumbleTriggers((short) -simulatedAmplitude,(short) -simulatedAmplitude);
+                            break;
+                    }
+                }
+            }).setTitle("请选择").create().show();
+            return;
+        }
+
         if(v.getId()==R.id.bt_vibrator_cancle){
+            if(!controllerUsbs.isEmpty()){
+                controllerUsbs.get(0).rumble((short) 0,(short) 0);
+                controllerUsbs.get(0).rumbleTriggers((short) 0,(short) 0);
+            }
             cancleRumble();
             return;
         }
@@ -143,7 +195,7 @@ public class AxiTestActivity extends Activity implements View.OnClickListener {
                 public void onClick(DialogInterface dialog, int which) {
                     dialog.dismiss();
                     if (ids.get(which).getVibrator().hasVibrator()) {
-                        String[] titles=new String[]{"简单震一秒","持续HD震动"};
+                        String[] titles=new String[]{"简单震一秒","持续HD震动","扳机震动"};
                         new AlertDialog.Builder(AxiTestActivity.this).setItems(titles, new DialogInterface.OnClickListener() {
                             @Override
                             public void onClick(DialogInterface dialog, int which2) {
@@ -156,6 +208,18 @@ public class AxiTestActivity extends Activity implements View.OnClickListener {
                                         cancleRumble();
                                         vibratorOnline=ids.get(which).getVibrator();
                                         rumble(vibratorOnline);
+                                        break;
+                                    case 2:
+                                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                                            vibratorManager=ids.get(which).getVibratorManager();
+                                            if(canRumbleTrgger(vibratorManager)){
+                                                rumbleQuadVibrators(vibratorManager,(short) -simulatedAmplitude,(short)-simulatedAmplitude,(short)-simulatedAmplitude,(short)-simulatedAmplitude);
+                                            }else{
+                                                Toast.makeText(AxiTestActivity.this, "此手柄不支持扳机震动！", Toast.LENGTH_SHORT).show();
+                                            }
+                                        }else{
+                                            Toast.makeText(AxiTestActivity.this, "低于安卓12不支持！", Toast.LENGTH_SHORT).show();
+                                        }
                                         break;
                                 }
                             }
@@ -239,6 +303,9 @@ public class AxiTestActivity extends Activity implements View.OnClickListener {
         if(vibratorOnline!=null){
             vibratorOnline.cancel();
         }
+        if (connectedToUsbDriverService) {
+            stopUsb();
+        }
     }
 
     private void updateGamePad() {
@@ -282,6 +349,10 @@ public class AxiTestActivity extends Activity implements View.OnClickListener {
                     sb.append("\n");
                     sb.append("震动："+(dev.getVibrator().hasVibrator()?"支持":"不支持"));
                     sb.append("\n");
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                        sb.append("震动马达数量："+dev.getVibratorManager().getVibratorIds().length);
+                    }
+                    sb.append("\n");
                     sb.append("详细信息：\n");
                     sb.append(dev.toString());
                     sb.append("\n");
@@ -307,4 +378,184 @@ public class AxiTestActivity extends Activity implements View.OnClickListener {
         return range;
     }
 
+
+    private void startUsb(){
+        bindService(new Intent(this, UsbDriverService.class),
+                usbDriverServiceConnection, Service.BIND_AUTO_CREATE);
+    }
+
+    private void stopUsb(){
+        unbindService(usbDriverServiceConnection);
+    }
+
+    private List<AbstractController> controllerUsbs=new ArrayList<>();
+
+    private boolean connectedToUsbDriverService = false;
+
+    private ServiceConnection usbDriverServiceConnection = new ServiceConnection() {
+        @Override
+        public void onServiceConnected(ComponentName componentName, IBinder iBinder) {
+            UsbDriverService.UsbDriverBinder binder = (UsbDriverService.UsbDriverBinder) iBinder;
+            binder.setListener(new UsbDriverListener() {
+                @Override
+                public void reportControllerState(int controllerId, int buttonFlags, float leftStickX, float leftStickY, float rightStickX, float rightStickY, float leftTrigger, float rightTrigger) {
+//                    LimeLog.warning("Rumble transfer axixi reportControllerState11111");
+                }
+
+                @Override
+                public void deviceRemoved(AbstractController controller) {
+                    LimeLog.warning("Rumble transfer axixi rm:"+controller.getControllerId()+":"+controller.getVendorId()+"、"+controller.getProductId());
+                    controllerUsbs.clear();
+                }
+
+                @Override
+                public void deviceAdded(AbstractController controller) {
+                    LimeLog.warning("Rumble transfer axixi add:"+controller.getControllerId()+":"+controller.getVendorId()+"、"+controller.getProductId());
+                    controllerUsbs.add(controller);
+//                    controller.rumble((short) -256,(short) -255);
+                    showControllerInfo();
+                }
+            });
+            binder.setStateListener(new UsbDriverService.UsbDriverStateListener() {
+                @Override
+                public void onUsbPermissionPromptStarting() {
+                    LimeLog.warning("Rumble transfer axixi onUsbPermissionPromptStarting");
+                }
+
+                @Override
+                public void onUsbPermissionPromptCompleted() {
+                    LimeLog.warning("Rumble transfer axixi onUsbPermissionPromptCompleted");
+                }
+
+                @Override
+                public void onUSBInfo(UsbDevice device) {
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            StringBuffer sb = new StringBuffer();
+                            sb.append("name："+device.getProductName());
+                            sb.append("\n");
+                            sb.append("vendorId："+device.getVendorId()+"\t["+String.format("%04x", device.getVendorId())+"]");
+                            sb.append("\n");
+                            sb.append("productId："+device.getProductId()+"\t["+String.format("%04x", device.getProductId())+"]");
+                            sb.append("\n");
+                            if(device.getInterfaceCount()>0){
+                                sb.append("interfaceClass："+device.getInterface(0).getInterfaceClass());
+                                sb.append("\n");
+                                sb.append("interfaceSubclass："+device.getInterface(0).getInterfaceSubclass());
+                                sb.append("\n");
+                                sb.append("interfaceProtocol："+device.getInterface(0).getInterfaceProtocol());
+                                sb.append("\n");
+                            }
+                            tx_gamepad_info.setText("内置USB驱动不支持此手柄\n"+sb.toString());
+                        }
+                    });
+                }
+            });
+            binder.start();
+            connectedToUsbDriverService = true;
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName componentName) {
+            connectedToUsbDriverService = false;
+        }
+    };
+
+
+    private void showControllerInfo(){
+        if(controllerUsbs.isEmpty()){
+            return;
+        }
+        StringBuffer sb = new StringBuffer();
+        sb.append("controllerId："+controllerUsbs.get(0).getControllerId());
+        sb.append("\n");
+        sb.append("vendorId："+controllerUsbs.get(0).getVendorId()+"\t["+String.format("%04x", controllerUsbs.get(0).getVendorId())+"]");
+        sb.append("\n");
+        sb.append("productId："+controllerUsbs.get(0).getProductId()+"\t["+String.format("%04x", controllerUsbs.get(0).getProductId())+"]");
+        sb.append("\n");
+        if(controllerUsbs.get(0) instanceof Xbox360Controller){
+            sb.append("类型：Xbox360Controller");
+        }
+        if(controllerUsbs.get(0) instanceof XboxOneController){
+            sb.append("类型：XboxOneController");
+        }
+        if(controllerUsbs.get(0) instanceof Xbox360WirelessDongle){
+            sb.append("类型：Xbox360WirelessDongle");
+        }
+        sb.append("\n");
+
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                tx_gamepad_info.setText("内置USB驱动支持此手柄：\n" + sb.toString());
+            }
+        });
+    }
+
+
+    private boolean canRumbleTrgger(VibratorManager vibratorManager){
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && hasQuadAmplitudeControlledRumbleVibrators(vibratorManager)) {
+            return true;
+        }
+        return false;
+    }
+
+
+    @TargetApi(31)
+    private void rumbleQuadVibrators(VibratorManager vm, short lowFreqMotor, short highFreqMotor, short leftTrigger, short rightTrigger) {
+        // Normalize motor values to 0-255 amplitudes for VibrationManager
+        highFreqMotor = (short)((highFreqMotor >> 8) & 0xFF);
+        lowFreqMotor = (short)((lowFreqMotor >> 8) & 0xFF);
+        leftTrigger = (short)((leftTrigger >> 8) & 0xFF);
+        rightTrigger = (short)((rightTrigger >> 8) & 0xFF);
+
+        // If they're all zero, we can just call cancel().
+        if (lowFreqMotor == 0 && highFreqMotor == 0 && leftTrigger == 0 && rightTrigger == 0) {
+            vm.cancel();
+            return;
+        }
+
+        // This is a guess based upon the behavior of FF_RUMBLE, but untested due to lack of Linux
+        // support for trigger rumble!
+        int[] vibratorIds = vm.getVibratorIds();
+        int[] vibratorAmplitudes = new int[] { highFreqMotor, lowFreqMotor, leftTrigger, rightTrigger };
+
+        CombinedVibration.ParallelCombination combo = CombinedVibration.startParallel();
+
+        for (int i = 0; i < vibratorIds.length; i++) {
+            // It's illegal to create a VibrationEffect with an amplitude of 0.
+            // Simply excluding that vibrator from our ParallelCombination will turn it off.
+            if (vibratorAmplitudes[i] != 0) {
+                combo.addVibrator(vibratorIds[i], VibrationEffect.createOneShot(60000, vibratorAmplitudes[i]));
+            }
+        }
+
+        VibrationAttributes.Builder vibrationAttributes = new VibrationAttributes.Builder();
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            vibrationAttributes.setUsage(VibrationAttributes.USAGE_MEDIA);
+        }
+
+        vm.vibrate(combo.combine(), vibrationAttributes.build());
+    }
+
+    @TargetApi(31)
+    private boolean hasQuadAmplitudeControlledRumbleVibrators(VibratorManager vm) {
+        int[] vibratorIds = vm.getVibratorIds();
+
+        // There must be exactly 4 vibrators on this device
+        if (vibratorIds.length != 4) {
+            return false;
+        }
+
+        // All vibrators must have amplitude control
+        for (int vid : vibratorIds) {
+            if (!vm.getVibrator(vid).hasAmplitudeControl()) {
+                return false;
+            }
+        }
+
+        return true;
+    }
 }
