@@ -133,6 +133,13 @@
             android:title="@string/title_checkbox_flip_face_buttons"
             android:summary="@string/summary_checkbox_flip_face_buttons"
             android:defaultValue="false" />
+
+        <CheckBoxPreference
+            android:key="checkbox_flip_rumble_ff"
+            android:title="反转握把震动"
+            android:summary="如果你发现扣动左扳机是右边握把震动，则开启此选项。"
+            android:defaultValue="false" />
+
         <CheckBoxPreference
             android:key="checkbox_gamepad_touchpad_as_mouse"
             android:title="@string/title_checkbox_gamepad_touchpad_as_mouse"
@@ -367,6 +374,12 @@
             android:title="阿西西调试页面"
             android:summary="测试手柄震动及其他内容。"
             />
+
+        <CheckBoxPreference
+            android:key="checkbox_enable_axi_test"
+            android:title="首页显示手柄调试入口"
+            android:summary="开启后会显示一个图标，快速打开手柄调试页面"
+            android:defaultValue="true"/>
 
         <CheckBoxPreference
             android:key="checkbox_enable_sbs"

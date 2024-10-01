@@ -577,7 +577,9 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
         context.leftStickDeadzoneRadius = (float) stickDeadzone;
         context.rightStickDeadzoneRadius = (float) stickDeadzone;
         context.triggerDeadzone = 0.13f;
-
+        if(prefConfig.disableTriggerDeadzone){
+            context.triggerDeadzone = 0.0f;
+        }
         return context;
     }
 
@@ -1956,8 +1958,15 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
         // always be enumerated in this order, but it seems consistent between Xbox Series X (USB),
         // PS3 (USB), and PS4 (USB+BT) controllers on Android 12 Beta 3.
         int[] vibratorIds = vm.getVibratorIds();
-        int[] vibratorAmplitudes = new int[] { highFreqMotor, lowFreqMotor };
-
+        int[] vibratorAmplitudes = new int[2];
+        if(prefConfig.enableFlipRumbleFF){
+            vibratorAmplitudes[0]=lowFreqMotor;
+            vibratorAmplitudes[1]=highFreqMotor;
+        }else{
+            vibratorAmplitudes[0]=highFreqMotor;
+            vibratorAmplitudes[1]=lowFreqMotor;
+        }
+//        int[] vibratorAmplitudes = new int[] { highFreqMotor, lowFreqMotor };
         CombinedVibration.ParallelCombination combo = CombinedVibration.startParallel();
 
         for (int i = 0; i < vibratorIds.length; i++) {
@@ -2014,8 +2023,19 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
         // This is a guess based upon the behavior of FF_RUMBLE, but untested due to lack of Linux
         // support for trigger rumble!
         int[] vibratorIds = vm.getVibratorIds();
-        int[] vibratorAmplitudes = new int[] { highFreqMotor, lowFreqMotor, leftTrigger, rightTrigger };
 
+        int[] vibratorAmplitudes =new int[4];
+
+        if(prefConfig.enableFlipRumbleFF){
+            vibratorAmplitudes[0]=lowFreqMotor;
+            vibratorAmplitudes[1]=highFreqMotor;
+        }else{
+            vibratorAmplitudes[0]=highFreqMotor;
+            vibratorAmplitudes[1]=lowFreqMotor;
+        }
+        vibratorAmplitudes[2]=leftTrigger;
+        vibratorAmplitudes[3]=rightTrigger;
+//        int[] vibratorAmplitudes = new int[] { highFreqMotor, lowFreqMotor, leftTrigger, rightTrigger };
         CombinedVibration.ParallelCombination combo = CombinedVibration.startParallel();
 
         for (int i = 0; i < vibratorIds.length; i++) {

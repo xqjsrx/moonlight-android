@@ -62,11 +62,24 @@
         android:layout_height="65dp"
         android:cropToPadding="false"
         android:scaleType="fitXY"
-        android:nextFocusForward="@id/manuallyAddPc"
+        android:nextFocusForward="@id/axiButton"
         android:layout_alignParentStart="true"
         android:layout_alignParentLeft="true"
         android:layout_below="@id/settingsButton"
         android:src="@drawable/ic_help"
+        style="?android:attr/borderlessButtonStyle"/>
+
+    <ImageButton
+        android:id="@+id/axiButton"
+        android:layout_width="70dp"
+        android:layout_height="65dp"
+        android:cropToPadding="false"
+        android:scaleType="fitXY"
+        android:nextFocusForward="@id/manuallyAddPc"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentLeft="true"
+        android:layout_below="@id/helpButton"
+        android:src="@drawable/ic_game_controller"
         style="?android:attr/borderlessButtonStyle"/>
 
     <ImageButton
@@ -77,7 +90,7 @@
         android:scaleType="fitXY"
         android:layout_alignParentStart="true"
         android:layout_alignParentLeft="true"
-        android:layout_below="@id/helpButton"
+        android:layout_below="@id/axiButton"
         android:src="@drawable/ic_add"
         style="?android:attr/borderlessButtonStyle"/>
 

@@ -268,6 +268,12 @@ public class PreferenceConfiguration {
     //禁用扳机死区
     public boolean disableTriggerDeadzone;
 
+    //显示手柄调试入口图标
+    public boolean enableGamePadIcon;
+
+    //反转左右握把震动顺序
+    public boolean enableFlipRumbleFF;
+
     public static boolean isNativeResolution(int width, int height) {
         // It's not a native resolution if it matches an existing resolution option
         if (width == 640 && height == 360) {
@@ -772,6 +778,10 @@ public class PreferenceConfiguration {
         config.enableAXFloatingOperate=prefs.getBoolean("checkbox_enable_ax_floating_operate",false);
 
         config.disableTriggerDeadzone=prefs.getBoolean("checkbox_disable_trigger_deadzone",false);
+
+        config.enableGamePadIcon=prefs.getBoolean("checkbox_enable_axi_test",true);
+
+        config.enableFlipRumbleFF=prefs.getBoolean("checkbox_flip_rumble_ff",false);
 
         config.absoluteMouseMode = prefs.getBoolean(ABSOLUTE_MOUSE_MODE_PREF_STRING, DEFAULT_ABSOLUTE_MOUSE_MODE);
         config.enableAudioFx = prefs.getBoolean(ENABLE_AUDIO_FX_PREF_STRING, DEFAULT_ENABLE_AUDIO_FX);

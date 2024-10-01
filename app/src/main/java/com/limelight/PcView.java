@@ -140,6 +140,10 @@ public class PcView extends Activity implements AdapterFragmentCallbacks {
         ImageButton settingsButton = findViewById(R.id.settingsButton);
         ImageButton addComputerButton = findViewById(R.id.manuallyAddPc);
         ImageButton helpButton = findViewById(R.id.helpButton);
+        ImageButton axButton = findViewById(R.id.axiButton);
+
+        axButton.setVisibility(PreferenceConfiguration.readPreferences(this).enableGamePadIcon?View.VISIBLE:View.GONE);
+
 
         settingsButton.setOnClickListener(new OnClickListener() {
             @Override
@@ -167,6 +171,14 @@ public class PcView extends Activity implements AdapterFragmentCallbacks {
         if (getPackageManager().hasSystemFeature("amazon.hardware.fire_tv")) {
             helpButton.setVisibility(View.GONE);
         }
+
+        axButton.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent i = new Intent(PcView.this, AxiTestActivity.class);
+                startActivity(i);
+            }
+        });
 
         getFragmentManager().beginTransaction()
             .replace(R.id.pcFragmentContainer, new AdapterFragment())
