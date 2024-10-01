@@ -20,6 +20,7 @@ import android.os.VibrationAttributes;
 import android.os.VibrationEffect;
 import android.os.Vibrator;
 import android.os.VibratorManager;
+import android.provider.Settings;
 import android.support.annotation.Nullable;
 import android.view.InputDevice;
 import android.view.MotionEvent;
@@ -37,6 +38,7 @@ import com.limelight.binding.input.driver.Xbox360WirelessDongle;
 import com.limelight.binding.input.driver.XboxOneController;
 import com.limelight.preferences.PreferenceConfiguration;
 import com.limelight.utils.DeviceUtils;
+import com.limelight.utils.ShellUtils;
 import com.limelight.utils.UiHelper;
 
 import java.util.ArrayList;
@@ -50,6 +52,8 @@ import java.util.List;
 public class AxiTestActivity extends Activity implements View.OnClickListener {
 
     private TextView tx_gamepad_info;
+
+    private TextView tx_content;
 
     private Vibrator vibrator;
 
@@ -75,7 +79,7 @@ public class AxiTestActivity extends Activity implements View.OnClickListener {
             UiHelper.setStatusBarLightMode(getWindow(),true);
         }
         tx_gamepad_info = findViewById(R.id.tx_game_pad_info);
-        TextView tx_content=findViewById(R.id.tx_content);
+        tx_content=findViewById(R.id.tx_content);
         bt_vibrator=findViewById(R.id.bt_vibrator);
 
         bt_vibrator_value=findViewById(R.id.bt_vibrator_value);
@@ -84,21 +88,32 @@ public class AxiTestActivity extends Activity implements View.OnClickListener {
 
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
-        String kernelVersion =System.getProperty("os.version");
-        StringBuffer sb=new StringBuffer();
-        sb.append("安卓版本："+ DeviceUtils.getSDKVersionName());
-        sb.append("\tapi版本："+Build.VERSION.SDK_INT);
-        sb.append("\n内核版本："+kernelVersion);
-        sb.append("\n品牌型号："+DeviceUtils.getManufacturer()+"\t-\t"+DeviceUtils.getModel());
-        sb.append("\n覆盖USB驱动状态："+PreferenceConfiguration.readPreferences(this).bindAllUsb);
-        tx_content.setText(sb.toString());
-
+        showDeviceInfo();
         boolean hasVibrator=((Vibrator)getSystemService(Context.VIBRATOR_SERVICE)).hasVibrator();
         String content=hasVibrator?"有震动马达":"无震动马达";
         bt_vibrator.setText("测试设备震动（"+content+"）");
 
         showSimlateAmp();
         startUsb();
+    }
+
+    private void showDeviceInfo(){
+        String kernelVersion =System.getProperty("os.version");
+        StringBuffer sb=new StringBuffer();
+        sb.append("安卓版本："+ DeviceUtils.getSDKVersionName());
+        sb.append("\tapi版本："+Build.VERSION.SDK_INT);
+        int vibratorInput=getVibratorInput();
+        if(vibratorInput!=-1){
+            sb.append("\n振动重定向："+(vibratorInput==1?"开启":"关闭"));
+            findViewById(R.id.bt_vibrator_input).setVisibility(View.VISIBLE);
+        }else{
+            sb.append("\n振动重定向：没有发现此参数");
+            findViewById(R.id.bt_vibrator_input).setVisibility(View.GONE);
+        }
+        sb.append("\n内核版本："+kernelVersion);
+        sb.append("\n品牌型号："+DeviceUtils.getManufacturer()+"\t-\t"+DeviceUtils.getModel());
+        sb.append("\n覆盖USB驱动状态："+PreferenceConfiguration.readPreferences(this).bindAllUsb);
+        tx_content.setText(sb.toString());
     }
 
     private void showSimlateAmp(){
@@ -123,6 +138,42 @@ public class AxiTestActivity extends Activity implements View.OnClickListener {
 
     @Override
     public void onClick(View v) {
+
+        if(v.getId()==R.id.bt_vibrator_input){
+            String[] titles=new String[]{"设备已root选此项","设备未root选此项"};
+            new AlertDialog.Builder(this).setItems(titles, new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    dialog.dismiss();
+                    switch (which){
+                        case 0:
+                            changeVibratorInput();
+                            break;
+                        case 1:
+                            new AlertDialog.Builder(AxiTestActivity.this)
+                                    .setMessage("开发者选项-USB调试-勾选USB调试（安全设置）执行adb命令\n" +
+                                            "\n" +
+                                            "查询安卓设置项\n查看是否有vibrate_input_devices参数\n" +
+                                            "adb shell settings list system\n" +
+                                            "\n" +
+                                            "开启震动重定向\n" +
+                                            "adb shell settings put system vibrate_input_devices 1\n" +
+                                            "\n" +
+                                            "关闭震动重定向\n" +
+                                            "adb shell settings put system vibrate_input_devices 0")
+                                    .setNegativeButton("确认", new DialogInterface.OnClickListener() {
+                                        @Override
+                                        public void onClick(DialogInterface dialog, int which) {
+                                            dialog.dismiss();
+                                        }
+                                    })
+                                    .setTitle("提示").create().show();
+                            break;
+                    }
+                }
+            }).setTitle("请选择").create().show();
+            return;
+        }
 
         if(v.getId()==R.id.bt_vibrator_gamepad_usb){
 
@@ -557,5 +608,44 @@ public class AxiTestActivity extends Activity implements View.OnClickListener {
         }
 
         return true;
+    }
+
+    //获取震动重定向开关
+    private int getVibratorInput(){
+        try {
+            int resultVibrate=Settings.System.getInt(getContentResolver(),"vibrate_input_devices");
+            return resultVibrate;
+        } catch (Exception e) {
+//            throw new RuntimeException(e);
+            e.printStackTrace();
+        }
+        return -1;
+    }
+
+    //修改震动重定向
+    private void changeVibratorInput(){
+        //设置震动重定向 没权限
+//        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+//            if (!Settings.System.canWrite(getApplicationContext())) {
+//                Intent intent = new Intent(android.provider.Settings.ACTION_MANAGE_WRITE_SETTINGS);
+//                intent.setData(Uri.parse("package:" + getApplicationContext().getPackageName()));
+//                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+//                getApplicationContext().startActivity(intent);
+//            } else {
+//                Settings.System.putInt(getContentResolver(), "vibrate_input_devices", 0);
+//            }
+//        }
+        try {
+            int inputVibrate=getVibratorInput();
+            ShellUtils.CommandResult result=ShellUtils.execCmd("settings put system vibrate_input_devices "+(inputVibrate==0?"1":"0"),true);
+            if(result.result==0){
+                showDeviceInfo();
+                Toast.makeText(AxiTestActivity.this,"修改成功！",Toast.LENGTH_SHORT).show();
+            }else{
+                Toast.makeText(AxiTestActivity.this,"发生错误:"+result.errorMsg,Toast.LENGTH_SHORT).show();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }
