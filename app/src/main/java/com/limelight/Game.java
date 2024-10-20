@@ -3109,6 +3109,19 @@ public class Game extends Activity implements SurfaceHolder.Callback,
         performanceOverlayView.setVisibility(View.GONE);
     }
 
+    public void switchHUD(){
+        performanceOverlayView.setVisibility(View.VISIBLE);
+        if(performanceOverlayLite.getVisibility()==View.VISIBLE){
+            prefConfig.enablePerfOverlayLite=false;
+            performanceOverlayBig.setVisibility(View.VISIBLE);
+            performanceOverlayLite.setVisibility(View.GONE);
+            return;
+        }
+        prefConfig.enablePerfOverlayLite=true;
+        performanceOverlayBig.setVisibility(View.GONE);
+        performanceOverlayLite.setVisibility(View.VISIBLE);
+    }
+
     //切换触控灵敏度开关
     public void switchTouchSensitivity(){
         prefConfig.enableTouchSensitivity=!prefConfig.enableTouchSensitivity;

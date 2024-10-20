@@ -22,7 +22,9 @@ import android.os.Vibrator;
 import android.os.VibratorManager;
 import android.provider.Settings;
 import android.support.annotation.Nullable;
+import android.text.TextUtils;
 import android.view.InputDevice;
+import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowManager;
@@ -41,6 +43,9 @@ import com.limelight.utils.DeviceUtils;
 import com.limelight.utils.ShellUtils;
 import com.limelight.utils.UiHelper;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -58,6 +63,9 @@ public class AxiTestActivity extends Activity implements View.OnClickListener {
     private Vibrator vibrator;
 
     private Button bt_vibrator;
+
+    private Button bt_keyboard;
+
     private List<InputDevice> ids = new ArrayList<>();
 
     private Vibrator vibratorOnline;
@@ -84,6 +92,8 @@ public class AxiTestActivity extends Activity implements View.OnClickListener {
 
         bt_vibrator_value=findViewById(R.id.bt_vibrator_value);
 
+        bt_keyboard=findViewById(R.id.bt_keyboard);
+
         vibrator = (Vibrator) this.getSystemService(this.VIBRATOR_SERVICE);
 
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
@@ -105,15 +115,18 @@ public class AxiTestActivity extends Activity implements View.OnClickListener {
         int vibratorInput=getVibratorInput();
         if(vibratorInput!=-1){
             sb.append("\n振动重定向："+(vibratorInput==1?"开启":"关闭"));
-            findViewById(R.id.bt_vibrator_input).setVisibility(View.VISIBLE);
         }else{
             sb.append("\n振动重定向：没有发现此参数");
-            findViewById(R.id.bt_vibrator_input).setVisibility(View.GONE);
         }
         sb.append("\n内核版本："+kernelVersion);
         sb.append("\n品牌型号："+DeviceUtils.getManufacturer()+"\t-\t"+DeviceUtils.getModel());
+        String cpuInfo=DeviceUtils.getCpuInfo();
+        if(!TextUtils.isEmpty(cpuInfo)){
+            sb.append("\nCPU信息："+cpuInfo);
+        }
         sb.append("\n覆盖USB驱动状态："+PreferenceConfiguration.readPreferences(this).bindAllUsb);
         tx_content.setText(sb.toString());
+//        LimeLog.info("axi--"+DeviceUtils.readCpuInfo());
     }
 
     private void showSimlateAmp(){
@@ -137,7 +150,30 @@ public class AxiTestActivity extends Activity implements View.OnClickListener {
     }
 
     @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        if(isTestKeyBoard){
+            tx_gamepad_info.setText(testKeyboardTips+"\n"+"scancode:"+event.getScanCode()+",code:"+event.getKeyCode());
+            return true;
+        }
+        return super.onKeyDown(keyCode, event);
+    }
+
+    private boolean isTestKeyBoard;
+
+    private String testKeyboardTips="开始测试按键键值，可以按任意键，退出测试模式请按停止按钮";
+    @Override
     public void onClick(View v) {
+
+        if(v.getId()==R.id.bt_keyboard){
+            isTestKeyBoard=!isTestKeyBoard;
+            if(!isTestKeyBoard){
+                bt_keyboard.setText("测试键盘按键");
+            }else{
+                bt_keyboard.setText("停止测试键盘");
+                tx_gamepad_info.setText(testKeyboardTips);
+            }
+            return;
+        }
 
         if(v.getId()==R.id.bt_vibrator_input){
             String[] titles=new String[]{"设备已root选此项","设备未root选此项"};
@@ -606,7 +642,6 @@ public class AxiTestActivity extends Activity implements View.OnClickListener {
                 return false;
             }
         }
-
         return true;
     }
 

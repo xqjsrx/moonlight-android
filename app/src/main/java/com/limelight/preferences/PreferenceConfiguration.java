@@ -274,6 +274,9 @@ public class PreferenceConfiguration {
     //反转左右握把震动顺序
     public boolean enableFlipRumbleFF;
 
+    //显示无障碍模式的键值
+    public boolean enableAccessibilityShowLog;
+
     public static boolean isNativeResolution(int width, int height) {
         // It's not a native resolution if it matches an existing resolution option
         if (width == 640 && height == 360) {
@@ -782,6 +785,8 @@ public class PreferenceConfiguration {
         config.enableGamePadIcon=prefs.getBoolean("checkbox_enable_axi_test",true);
 
         config.enableFlipRumbleFF=prefs.getBoolean("checkbox_flip_rumble_ff",false);
+
+        config.enableAccessibilityShowLog=prefs.getBoolean("checkbox_enable_accessibility_show_log",false);
 
         config.absoluteMouseMode = prefs.getBoolean(ABSOLUTE_MOUSE_MODE_PREF_STRING, DEFAULT_ABSOLUTE_MOUSE_MODE);
         config.enableAudioFx = prefs.getBoolean(ENABLE_AUDIO_FX_PREF_STRING, DEFAULT_ENABLE_AUDIO_FX);

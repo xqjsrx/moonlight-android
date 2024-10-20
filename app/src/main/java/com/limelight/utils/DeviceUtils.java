@@ -16,7 +16,10 @@ import android.telephony.TelephonyManager;
 import android.text.TextUtils;
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
@@ -407,4 +410,24 @@ public final class DeviceUtils {
                 Settings.Global.DEVELOPMENT_SETTINGS_ENABLED, 0
         ) > 0;
     }
+
+    public static String getCpuInfo() {
+        StringBuilder cpuInfo = new StringBuilder();
+        try {
+            BufferedReader reader = new BufferedReader(new FileReader("/proc/cpuinfo"));
+            String line;
+            while ((line = reader.readLine()) != null) {
+                if (line.startsWith("Hardware")) {
+                    // Hardware line contains the CPU model
+                    cpuInfo.append(line.split(":\\s+", 2)[1].trim());
+                    break;
+                }
+            }
+            reader.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return cpuInfo.toString();
+    }
+
 }

@@ -19,6 +19,7 @@ import com.limelight.R;
 import com.limelight.nvstream.av.video.VideoDecoderRenderer;
 import com.limelight.nvstream.jni.MoonBridge;
 import com.limelight.preferences.PreferenceConfiguration;
+import com.limelight.utils.DeviceUtils;
 import com.limelight.utils.TrafficStatsHelper;
 
 import android.annotation.TargetApi;
@@ -35,6 +36,7 @@ import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Process;
 import android.os.SystemClock;
+import android.text.TextUtils;
 import android.util.Range;
 import android.view.Choreographer;
 import android.view.Surface;
@@ -1491,6 +1493,23 @@ public class MediaCodecDecoderRenderer extends VideoDecoderRenderer implements C
                                 (float)lastTwo.totalHostProcessingLatency / 10 / lastTwo.framesWithHostProcessingLatency)).append('\n');
                     }
                     sb.append(context.getString(R.string.perf_overlay_dectime, decodeTimeMs));
+                    if(TrafficStatsHelper.getPackageRxBytes(Process.myUid())!= TrafficStats.UNSUPPORTED){
+                        long netData=TrafficStatsHelper.getPackageRxBytes(Process.myUid())+TrafficStatsHelper.getPackageTxBytes(Process.myUid());
+                        if(lastNetDataNum!=0){
+                            sb.append("\n带宽：");
+                            float realtimeNetData=(netData-lastNetDataNum)/1024f;
+                            if(realtimeNetData>=1000){
+                                sb.append(String.format("%.2f", realtimeNetData/1024f) +"M/s\t ");
+                            }else{
+                                sb.append(String.format("%.2f", realtimeNetData) +"K/s\t ");
+                            }
+                        }
+                        lastNetDataNum=netData;
+                    }
+                    String cpuModel=DeviceUtils.getCpuInfo();
+                    if(!TextUtils.isEmpty(cpuModel)){
+                        sb.append("\nCPU信息："+ cpuModel);
+                    }
                 }
 
                 perfListener.onPerfUpdate(sb.toString());

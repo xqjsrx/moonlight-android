@@ -145,6 +145,7 @@ public class GameMenu {
     private void showMenuDialog(String title, MenuOption[] options) {
         AlertDialog.Builder builder = new AlertDialog.Builder(game);
         builder.setTitle(title);
+        builder.setIcon(R.drawable.app_icon);
 
         final ArrayAdapter<String> actions =
                 new ArrayAdapter<String>(game, android.R.layout.simple_list_item_1);
@@ -300,6 +301,8 @@ public class GameMenu {
                 () -> game.switchLandscapePortraitScreen()));
         options.add(new MenuOption("(开启/关闭)画面移动&缩放", true,
                 () -> game.screenMoveZoom()));
+        options.add(new MenuOption("切换性能信息样式", true,
+                () -> game.switchHUD()));
         if (device != null) {
             options.addAll(device.getGameMenuOptions());
         }

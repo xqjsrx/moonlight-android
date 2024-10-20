@@ -569,6 +569,18 @@
             android:summary="每次都会覆盖原来的，请注意备份。"
             />
 
+        <Preference
+            android:key="import_switch_button_file"
+            android:title="导入自定义无障碍配置文件"
+            android:summary="每次都会覆盖原来的，请注意备份。"
+            />
+
+        <CheckBoxPreference
+            android:key="checkbox_enable_accessibility_show_log"
+            android:title="无障碍键盘模式显示捕获的键值"
+            android:summary="打开无障碍键盘，在月光app任意界面，输入按键，会弹出键值，用于自定义无障碍配置文件使用。"
+            android:defaultValue="false"/>
+
         <com.limelight.preferences.WebLauncherPreference
             android:title="软件版本更新"
             android:summary="跳转到github获取releases"

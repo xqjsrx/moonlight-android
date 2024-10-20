@@ -1,0 +1,15 @@
+{
+  "desc": "无障碍模式 按键映射对应关系 键值：https://developer.android.com/reference/android/view/KeyEvent",
+  "data":[
+    {
+      "scancode": 642,
+      "code": 117,
+      "name": "win键 这个值给自己看的，程序不需要"
+    },
+    {
+      "scancode": 158,
+      "code": 111,
+      "name": "esc"
+    }
+  ]
+}

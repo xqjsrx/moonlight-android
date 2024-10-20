@@ -770,7 +770,16 @@ public class StreamSettings extends Activity {
                     return false;
                 }
             });
-
+            findPreference("import_switch_button_file").setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
+                @Override
+                public boolean onPreferenceClick(Preference preference) {
+                    Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+                    intent.addCategory(Intent.CATEGORY_OPENABLE);
+                    intent.setType("application/json");
+                    startActivityForResult(intent, READ_REQUEST_SWITCH_BUTTON_CODE);
+                    return false;
+                }
+            });
 
 
             findPreference("export_keyboard_file").setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
@@ -925,6 +934,7 @@ public class StreamSettings extends Activity {
 
         int READ_REQUEST_VIRTUAL_BUTTON_CODE=1006;
 
+        int READ_REQUEST_SWITCH_BUTTON_CODE=1007;
 
         @Override
         public void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -1037,6 +1047,22 @@ public class StreamSettings extends Activity {
                     Uri uri = data.getData();
                     File dataBaseFile= null;
                     String displayName = "axi_keyboard.json";
+                    dataBaseFile=new File(getActivity().getFilesDir().getAbsolutePath(), displayName);
+                    FileUriUtils.copyUriToInternalStorage(getActivity(),uri,dataBaseFile);
+                    Toast.makeText(getActivity(),"导入成功!",Toast.LENGTH_SHORT).show();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    Toast.makeText(getActivity(),"出错啦~"+e.getMessage(),Toast.LENGTH_SHORT).show();
+                }
+                return;
+
+            }
+
+            if (requestCode == READ_REQUEST_SWITCH_BUTTON_CODE && resultCode == Activity.RESULT_OK &&data.getData()!=null) {
+                try {
+                    Uri uri = data.getData();
+                    File dataBaseFile= null;
+                    String displayName = "axi_switch_keyboard.json";
                     dataBaseFile=new File(getActivity().getFilesDir().getAbsolutePath(), displayName);
                     FileUriUtils.copyUriToInternalStorage(getActivity(),uri,dataBaseFile);
                     Toast.makeText(getActivity(),"导入成功!",Toast.LENGTH_SHORT).show();
