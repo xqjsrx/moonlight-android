@@ -1438,14 +1438,22 @@ public class MediaCodecDecoderRenderer extends VideoDecoderRenderer implements C
                 VideoStatsFps fps = lastTwo.getFps();
                 String decoder;
 
+                String video_format="";
+                if ((videoFormat & MoonBridge.VIDEO_FORMAT_MASK_10BIT) != 0) {
+                    video_format="HDR ";
+                }
                 if ((videoFormat & MoonBridge.VIDEO_FORMAT_MASK_H264) != 0) {
                     decoder = avcDecoder.getName();
+                    video_format+="H264";
                 } else if ((videoFormat & MoonBridge.VIDEO_FORMAT_MASK_H265) != 0) {
                     decoder = hevcDecoder.getName();
+                    video_format+="HEVC";
                 } else if ((videoFormat & MoonBridge.VIDEO_FORMAT_MASK_AV1) != 0) {
                     decoder = av1Decoder.getName();
+                    video_format+="AV1";
                 } else {
                     decoder = "(unknown)";
+                    video_format+="???";
                 }
 
                 float decodeTimeMs = (float)lastTwo.decoderTimeMs / lastTwo.totalFramesReceived;
@@ -1465,8 +1473,13 @@ public class MediaCodecDecoderRenderer extends VideoDecoderRenderer implements C
                         }
                         lastNetDataNum=netData;
                     }
-//                    sb.append("分辨率：");
-//                    sb.append(initialWidth + "x" + initialHeight);
+                    //额外参数
+                    if(prefs.enablePerfOverlayLiteExt){
+                        sb.append(initialWidth + "x" + initialHeight);
+                        sb.append("\t");
+                        sb.append(video_format);
+                        sb.append("\t ");
+                    }
                     sb.append("延迟/解码：");
                     sb.append(context.getString(R.string.perf_overlay_lite_net,(int)(rttInfo >> 32)));
                     sb.append(" / ");
