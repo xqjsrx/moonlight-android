@@ -10,6 +10,9 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
 import android.hardware.usb.UsbDevice;
 import android.media.AudioAttributes;
 import android.os.Build;
@@ -26,12 +29,15 @@ import android.text.TextUtils;
 import android.view.InputDevice;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
+import android.view.Surface;
 import android.view.View;
+import android.view.Window;
 import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
+
 import com.limelight.binding.input.driver.AbstractController;
 import com.limelight.binding.input.driver.UsbDriverListener;
 import com.limelight.binding.input.driver.UsbDriverService;
@@ -42,10 +48,6 @@ import com.limelight.preferences.PreferenceConfiguration;
 import com.limelight.utils.DeviceUtils;
 import com.limelight.utils.ShellUtils;
 import com.limelight.utils.UiHelper;
-
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -76,15 +78,29 @@ public class AxiTestActivity extends Activity implements View.OnClickListener {
 
     private int simulatedAmplitude=220;
 
+    private SensorManager sm;
+    private SensorEventListener accelSensor;
+    private SensorEventListener gyroSensor;
+
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && !PreferenceConfiguration.readPreferences(this).uiThemeColorWhite) {
             setTheme(R.style.AppTheme);
         }
         super.onCreate(savedInstanceState);
+        requestWindowFeature(Window.FEATURE_NO_TITLE);
         setContentView(R.layout.activity_axitest);
         if (PreferenceConfiguration.readPreferences(this).uiThemeColorWhite) {
             UiHelper.setStatusBarLightMode(getWindow(),true);
+        }
+        //填充刘海
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            getWindow().getAttributes().layoutInDisplayCutoutMode =
+                    WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS;
+        }
+        else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            getWindow().getAttributes().layoutInDisplayCutoutMode =
+                    WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
         }
         tx_gamepad_info = findViewById(R.id.tx_game_pad_info);
         tx_content=findViewById(R.id.tx_content);
@@ -125,6 +141,25 @@ public class AxiTestActivity extends Activity implements View.OnClickListener {
             sb.append("\nCPU信息："+cpuInfo);
         }
         sb.append("\n覆盖USB驱动状态："+PreferenceConfiguration.readPreferences(this).bindAllUsb);
+        sb.append("\n握把马达反转状态："+PreferenceConfiguration.readPreferences(this).enableFlipRumbleFF);
+
+        int deviceRotation = getWindowManager().getDefaultDisplay().getRotation();
+        sb.append("\n屏幕方向：");
+        switch (deviceRotation) {
+            case Surface.ROTATION_0:
+                sb.append("0");
+                break;
+            case Surface.ROTATION_180:
+                sb.append("180");
+                break;
+
+            case Surface.ROTATION_90:
+                sb.append("90");
+                break;
+            case Surface.ROTATION_270:
+                sb.append("270");
+                break;
+        }
         tx_content.setText(sb.toString());
 //        LimeLog.info("axi--"+DeviceUtils.readCpuInfo());
     }
@@ -245,11 +280,12 @@ public class AxiTestActivity extends Activity implements View.OnClickListener {
                 controllerUsbs.get(0).rumbleTriggers((short) 0,(short) 0);
             }
             cancleRumble();
+            canSensor();
             return;
         }
         //机身震动
         if (v.getId() == R.id.bt_vibrator) {
-            String[] titles=new String[]{"简单震一秒","持续HD震动"};
+            String[] titles=new String[]{"简单震一秒","持续HD震动","陀螺仪"};
             new AlertDialog.Builder(this).setItems(titles, new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialog, int which) {
@@ -260,6 +296,10 @@ public class AxiTestActivity extends Activity implements View.OnClickListener {
                             break;
                         case 1:
                             rumble(vibrator);
+                            break;
+                        case 2:
+                            sm=(SensorManager) getSystemService(Context.SENSOR_SERVICE);
+                            initSensor();
                             break;
                     }
                 }
@@ -282,7 +322,7 @@ public class AxiTestActivity extends Activity implements View.OnClickListener {
                 public void onClick(DialogInterface dialog, int which) {
                     dialog.dismiss();
                     if (ids.get(which).getVibrator().hasVibrator()) {
-                        String[] titles=new String[]{"简单震一秒","持续HD震动","扳机震动"};
+                        String[] titles=new String[]{"简单震一秒","持续HD震动","扳机震动","左握把震动","右握把震动","陀螺仪"};
                         new AlertDialog.Builder(AxiTestActivity.this).setItems(titles, new DialogInterface.OnClickListener() {
                             @Override
                             public void onClick(DialogInterface dialog, int which2) {
@@ -308,10 +348,56 @@ public class AxiTestActivity extends Activity implements View.OnClickListener {
                                             Toast.makeText(AxiTestActivity.this, "低于安卓12不支持！", Toast.LENGTH_SHORT).show();
                                         }
                                         break;
+                                    case 3:
+                                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                                            vibratorManager=ids.get(which).getVibratorManager();
+                                            if(hasDualAmplitudeControlledRumbleVibrators(vibratorManager)){
+                                                rumbleDualVibrators(vibratorManager,(short) simulatedAmplitude,(short) 0);
+                                            }else{
+                                                Toast.makeText(AxiTestActivity.this, "不支持振幅控制！", Toast.LENGTH_SHORT).show();
+                                            }
+
+                                        }else{
+                                            Toast.makeText(AxiTestActivity.this, "低于安卓12不支持！", Toast.LENGTH_SHORT).show();
+                                        }
+                                        break;
+                                    case 4:
+                                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                                            vibratorManager=ids.get(which).getVibratorManager();
+                                            if(hasDualAmplitudeControlledRumbleVibrators(vibratorManager)){
+                                                rumbleDualVibrators(vibratorManager,(short) 0,(short) simulatedAmplitude);
+                                            }else{
+                                                Toast.makeText(AxiTestActivity.this, "不支持振幅控制！", Toast.LENGTH_SHORT).show();
+                                            }
+                                        }else{
+                                            Toast.makeText(AxiTestActivity.this, "低于安卓12不支持！", Toast.LENGTH_SHORT).show();
+                                        }
+                                        break;
+                                    case 5:
+                                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && ids.get(which).getSensorManager().getDefaultSensor(Sensor.TYPE_GYROSCOPE) != null) {
+                                            sm=ids.get(which).getSensorManager();
+                                            initSensor();
+                                        }else{
+                                            Toast.makeText(AxiTestActivity.this, "手柄没有识别到陀螺仪！", Toast.LENGTH_SHORT).show();
+                                        }
+                                        break;
                                 }
                             }
                         }).setTitle("请选择").create().show();
-                    } else {
+                    } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && ids.get(which).getSensorManager().getDefaultSensor(Sensor.TYPE_GYROSCOPE) != null) {
+                        new AlertDialog.Builder(AxiTestActivity.this)
+                                .setTitle("请选择")
+                                .setItems(new String[]{"陀螺仪"}, new DialogInterface.OnClickListener() {
+                                    @Override
+                                    public void onClick(DialogInterface dialog, int which) {
+                                        sm=ids.get(which).getSensorManager();
+                                        initSensor();
+                                    }
+                                })
+                                .create()
+                                .show();
+
+                    }else{
                         Toast.makeText(AxiTestActivity.this, "手柄没有识别到震动传感器！", Toast.LENGTH_SHORT).show();
                     }
 
@@ -364,6 +450,109 @@ public class AxiTestActivity extends Activity implements View.OnClickListener {
 //        }
     }
 
+    private void canSensor(){
+        if(sm==null||gyroSensor==null||accelSensor==null){
+            return;
+        }
+        sm.unregisterListener(accelSensor);
+        sm.unregisterListener(gyroSensor);
+    }
+
+    private String accelDataString="";
+    private String gyroDataString="";
+
+    private void showSensorData(){
+        StringBuffer sb=new StringBuffer();
+        sb.append("【X,Y,Z轴对应传感器数据索引0,1,2】");
+        sb.append("\n");
+        sb.append(gyroDataString);
+        sb.append("\n");
+        sb.append("\n");
+        sb.append(accelDataString);
+        AxiTestActivity.this.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                tx_gamepad_info.setText(sb.toString());
+            }
+        });
+    }
+
+    private void initSensor(){
+        accelSensor=new SensorEventListener() {
+            @Override
+            public void onSensorChanged(SensorEvent event) {
+                StringBuffer sb=new StringBuffer();
+                sb.append("加速度");
+                sb.append("\n");
+                sb.append(event.sensor.getName());
+                sb.append("\n");
+                sb.append("【X】: ");
+                sb.append(event.values[0]);
+                sb.append("\n");
+                sb.append("【Y】: ");
+                sb.append(event.values[1]);
+                sb.append("\n");
+                sb.append("【Z】: ");
+                sb.append(event.values[2]);
+                accelDataString=sb.toString();
+                showSensorData();
+            }
+
+            @Override
+            public void onAccuracyChanged(Sensor sensor, int accuracy) {
+
+            }
+        };
+
+        gyroSensor=new SensorEventListener() {
+            @Override
+            public void onSensorChanged(SensorEvent event) {
+                StringBuffer sb=new StringBuffer();
+                sb.append("陀螺仪");
+                sb.append("\n");
+                sb.append(event.sensor.getName());
+                sb.append("\n");
+                sb.append("【X】: ");
+                sb.append(event.values[0]);
+                sb.append("\n");
+                sb.append("【Y】: ");
+                sb.append(event.values[1]);
+                sb.append("\n");
+                sb.append("【Z】: ");
+                sb.append(event.values[2]);
+                gyroDataString=sb.toString();
+                showSensorData();
+            }
+
+            @Override
+            public void onAccuracyChanged(Sensor sensor, int accuracy) {
+
+            }
+        };
+
+        sm.registerListener(accelSensor,sm.getDefaultSensor(Sensor.TYPE_ACCELEROMETER),SensorManager.SENSOR_DELAY_NORMAL);
+
+        sm.registerListener(gyroSensor,sm.getDefaultSensor(Sensor.TYPE_GYROSCOPE),SensorManager.SENSOR_DELAY_NORMAL);
+    }
+
+    @TargetApi(31)
+    private boolean hasDualAmplitudeControlledRumbleVibrators(VibratorManager vm) {
+        int[] vibratorIds = vm.getVibratorIds();
+
+        // There must be exactly 2 vibrators on this device
+        if (vibratorIds.length != 2) {
+            return false;
+        }
+
+        // Both vibrators must have amplitude control
+        for (int vid : vibratorIds) {
+            if (!vm.getVibrator(vid).hasAmplitudeControl()) {
+                return false;
+            }
+        }
+
+        return true;
+    }
 
     private void rumble(Vibrator vibrator){
         long pwmPeriod = 20;
@@ -393,6 +582,7 @@ public class AxiTestActivity extends Activity implements View.OnClickListener {
         if (connectedToUsbDriverService) {
             stopUsb();
         }
+        canSensor();
     }
 
     private void updateGamePad() {
@@ -415,13 +605,13 @@ public class AxiTestActivity extends Activity implements View.OnClickListener {
                     sb.append("传感器：");
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                         String sensor="";
-                        if (dev.getSensorManager().getDefaultSensor(Sensor.TYPE_ACCELEROMETER) != null) {
-                            sensor="+加速度传感器";
-                        }
                         if(dev.getSensorManager().getDefaultSensor(Sensor.TYPE_GYROSCOPE) != null){
-                            sensor="+陀螺仪";
+                            sensor+="+陀螺仪\t ";
                         }
-                        if(sensor.length()==0){
+                        if (dev.getSensorManager().getDefaultSensor(Sensor.TYPE_ACCELEROMETER) != null) {
+                            sensor+="+加速度";
+                        }
+                        if(sensor.isEmpty()){
                             sb.append("无（没有相关驱动或者手柄不支持）");
                         }else{
                             sb.append(sensor);
@@ -608,6 +798,51 @@ public class AxiTestActivity extends Activity implements View.OnClickListener {
         int[] vibratorIds = vm.getVibratorIds();
         int[] vibratorAmplitudes = new int[] { highFreqMotor, lowFreqMotor, leftTrigger, rightTrigger };
 
+        CombinedVibration.ParallelCombination combo = CombinedVibration.startParallel();
+
+        for (int i = 0; i < vibratorIds.length; i++) {
+            // It's illegal to create a VibrationEffect with an amplitude of 0.
+            // Simply excluding that vibrator from our ParallelCombination will turn it off.
+            if (vibratorAmplitudes[i] != 0) {
+                combo.addVibrator(vibratorIds[i], VibrationEffect.createOneShot(60000, vibratorAmplitudes[i]));
+            }
+        }
+
+        VibrationAttributes.Builder vibrationAttributes = new VibrationAttributes.Builder();
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            vibrationAttributes.setUsage(VibrationAttributes.USAGE_MEDIA);
+        }
+
+        vm.vibrate(combo.combine(), vibrationAttributes.build());
+    }
+
+    // This must only be called if hasDualAmplitudeControlledRumbleVibrators() is true!
+    @TargetApi(31)
+    private void rumbleDualVibrators(VibratorManager vm, short lowFreqMotor, short highFreqMotor) {
+        // Normalize motor values to 0-255 amplitudes for VibrationManager
+//        highFreqMotor = (short)((highFreqMotor >> 8) & 0xFF);
+//        lowFreqMotor = (short)((lowFreqMotor >> 8) & 0xFF);
+
+        // If they're both zero, we can just call cancel().
+        if (lowFreqMotor == 0 && highFreqMotor == 0) {
+            vm.cancel();
+            return;
+        }
+
+        // There's no documentation that states that vibrators for FF_RUMBLE input devices will
+        // always be enumerated in this order, but it seems consistent between Xbox Series X (USB),
+        // PS3 (USB), and PS4 (USB+BT) controllers on Android 12 Beta 3.
+        int[] vibratorIds = vm.getVibratorIds();
+        int[] vibratorAmplitudes = new int[2];
+        if(PreferenceConfiguration.readPreferences(this).enableFlipRumbleFF){
+            vibratorAmplitudes[0]=lowFreqMotor;
+            vibratorAmplitudes[1]=highFreqMotor;
+        }else{
+            vibratorAmplitudes[0]=highFreqMotor;
+            vibratorAmplitudes[1]=lowFreqMotor;
+        }
+//        int[] vibratorAmplitudes = new int[] { highFreqMotor, lowFreqMotor };
         CombinedVibration.ParallelCombination combo = CombinedVibration.startParallel();
 
         for (int i = 0; i < vibratorIds.length; i++) {
