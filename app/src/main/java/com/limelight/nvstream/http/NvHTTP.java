@@ -86,6 +86,12 @@ public class NvHTTP {
     private X509KeyManager keyManager;
     private X509Certificate serverCert;
 
+    private String clientName;
+
+    public void setClientName(String clientName) {
+        this.clientName = clientName;
+    }
+
     void setServerCert(X509Certificate serverCert) {
         this.serverCert = serverCert;
     }
@@ -415,6 +421,7 @@ public class NvHTTP {
                 .query(query)
                 .addQueryParameter("uniqueid", uniqueId)
                 .addQueryParameter("uuid", UUID.randomUUID().toString())
+                .addQueryParameter("clientname", clientName)
                 .build();
     }
 
