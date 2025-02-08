@@ -52,6 +52,14 @@ public class UsbDriverService extends Service implements UsbDriverListener {
     }
 
     @Override
+    public void reportControllerMotion(int controllerId, byte motionType, float motionX, float motionY, float motionZ) {
+        // Call through to the client's listener
+        if (listener != null) {
+            listener.reportControllerMotion(controllerId, motionType, motionX, motionY, motionZ);
+        }
+    }
+
+    @Override
     public void deviceRemoved(AbstractController controller) {
         // Remove the the controller from our list (if not removed already)
         controllers.remove(controller);
@@ -194,6 +202,9 @@ public class UsbDriverService extends Service implements UsbDriverListener {
             else if (Xbox360WirelessDongle.canClaimDevice(device)) {
                 controller = new Xbox360WirelessDongle(device, connection, nextDeviceId++, this);
             }
+            else if (ProConController.canClaimDevice(device)) {
+                controller = new ProConController(device, connection, nextDeviceId++, this);
+            }
             else {
                 // Unreachable
                 return;
@@ -283,7 +294,8 @@ public class UsbDriverService extends Service implements UsbDriverListener {
         return ((!kernelSupportsXboxOne() || !isRecognizedInputDevice(device) || claimAllAvailable) && XboxOneController.canClaimDevice(device)) ||
                 ((!isRecognizedInputDevice(device) || claimAllAvailable) && Xbox360Controller.canClaimDevice(device)) ||
                 // We must not call isRecognizedInputDevice() because wireless controllers don't share the same product ID as the dongle
-                ((!kernelSupportsXbox360W() || claimAllAvailable) && Xbox360WirelessDongle.canClaimDevice(device));
+                ((!kernelSupportsXbox360W() || claimAllAvailable) && Xbox360WirelessDongle.canClaimDevice(device)) ||
+                ((!isRecognizedInputDevice(device) || claimAllAvailable) && ProConController.canClaimDevice(device));
     }
 
     @SuppressLint("UnspecifiedRegisterReceiverFlag")

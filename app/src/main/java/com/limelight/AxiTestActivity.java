@@ -112,10 +112,15 @@ public class AxiTestActivity extends Activity implements View.OnClickListener {
 
         vibrator = (Vibrator) this.getSystemService(this.VIBRATOR_SERVICE);
 
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+            VibratorManager manager=(VibratorManager) getSystemService(Context.VIBRATOR_MANAGER_SERVICE);
+            vibrator = manager.getDefaultVibrator();
+        }
+
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
         showDeviceInfo();
-        boolean hasVibrator=((Vibrator)getSystemService(Context.VIBRATOR_SERVICE)).hasVibrator();
+        boolean hasVibrator=vibrator.hasVibrator();
         String content=hasVibrator?"有震动马达":"无震动马达";
         bt_vibrator.setText("测试设备震动（"+content+"）");
 
@@ -680,6 +685,11 @@ public class AxiTestActivity extends Activity implements View.OnClickListener {
                 }
 
                 @Override
+                public void reportControllerMotion(int controllerId, byte motionType, float motionX, float motionY, float motionZ) {
+
+                }
+
+                @Override
                 public void deviceRemoved(AbstractController controller) {
                     LimeLog.warning("Rumble transfer axixi rm:"+controller.getControllerId()+":"+controller.getVendorId()+"、"+controller.getProductId());
                     controllerUsbs.clear();
@@ -918,4 +928,5 @@ public class AxiTestActivity extends Activity implements View.OnClickListener {
             e.printStackTrace();
         }
     }
+
 }

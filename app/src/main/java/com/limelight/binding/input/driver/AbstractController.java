@@ -1,5 +1,7 @@
 package com.limelight.binding.input.driver;
 
+import com.limelight.nvstream.jni.MoonBridge;
+
 public abstract class AbstractController {
 
     private final int deviceId;
@@ -14,7 +16,8 @@ public abstract class AbstractController {
     protected float leftStickX, leftStickY;
     protected short capabilities;
     protected byte type;
-
+    protected float gyroX, gyroY, gyroZ;
+    protected float accelX, accelY, accelZ;
     public int getControllerId() {
         return deviceId;
     }
@@ -55,6 +58,12 @@ public abstract class AbstractController {
 
     public abstract boolean start();
     public abstract void stop();
+
+    // New method to report motion events
+    protected void reportMotion() {
+        listener.reportControllerMotion(deviceId, MoonBridge.LI_MOTION_TYPE_GYRO, gyroX, gyroY, gyroZ);
+        listener.reportControllerMotion(deviceId, MoonBridge.LI_MOTION_TYPE_ACCEL, accelX, accelY, accelZ);
+    }
 
     public AbstractController(int deviceId, UsbDriverListener listener, int vendorId, int productId) {
         this.deviceId = deviceId;

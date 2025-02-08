@@ -2069,6 +2069,14 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
             // because our simulatedAmplitude could be 0 even though our inputs
             // are not (ex: lowFreqMotor == 0 && highFreqMotor == 1).
             vibrator.cancel();
+            if(vibrator==deviceVibrator&&prefConfig.enableForceStrongVibrationsStop){
+                vibrator.vibrate(1);
+            }
+            return;
+        }
+        //设备震动马达，并且开启强烈震动
+        if(vibrator==deviceVibrator&&prefConfig.enableForceStrongVibrations){
+            vibrator.vibrate(60000);
             return;
         }
 
@@ -2445,6 +2453,16 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
 
         switch (keyCode) {
         case KeyEvent.KEYCODE_BUTTON_MODE:
+            if(prefConfig.mouseEmulation&&prefConfig.mouseEmulationGameMenu==1){
+                if ((context.inputMap & ControllerPacket.SPECIAL_BUTTON_FLAG) != 0) {
+                    if(prefConfig.enableQtDialog){
+                        //todo 展示快捷菜单
+                        gestures.showGameMenu(context);
+                    }else{
+                        context.toggleMouseEmulation();
+                    }
+                }
+            }
             context.inputMap &= ~ControllerPacket.SPECIAL_BUTTON_FLAG;
             break;
         case KeyEvent.KEYCODE_BUTTON_START:
@@ -2452,20 +2470,32 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
             // Sometimes we'll get a spurious key up event on controller disconnect.
             // Make sure it's real by checking that the key is actually down before taking
             // any action.
-            if ((context.inputMap & ControllerPacket.PLAY_FLAG) != 0 &&
-                    event.getEventTime() - context.startDownTime > ControllerHandler.START_DOWN_TIME_MOUSE_MODE_MS &&
-                    prefConfig.mouseEmulation) {
-                if(prefConfig.enableQtDialog){
-                    //todo 展示快捷菜单
-                    gestures.showGameMenu(context);
-                }else{
-                    context.toggleMouseEmulation();
+            if(prefConfig.mouseEmulation&&prefConfig.mouseEmulationGameMenu==0){
+                if ((context.inputMap & ControllerPacket.PLAY_FLAG) != 0 &&
+                        event.getEventTime() - context.startDownTime > ControllerHandler.START_DOWN_TIME_MOUSE_MODE_MS) {
+                    if(prefConfig.enableQtDialog){
+                        //todo 展示快捷菜单
+                        gestures.showGameMenu(context);
+                    }else{
+                        context.toggleMouseEmulation();
+                    }
                 }
             }
             context.inputMap &= ~ControllerPacket.PLAY_FLAG;
             break;
         case KeyEvent.KEYCODE_BACK:
         case KeyEvent.KEYCODE_BUTTON_SELECT:
+            if(prefConfig.mouseEmulation&&prefConfig.mouseEmulationGameMenu==2){
+                if ((context.inputMap & ControllerPacket.BACK_FLAG) != 0 &&
+                        event.getEventTime() - context.startDownTime > ControllerHandler.START_DOWN_TIME_MOUSE_MODE_MS) {
+                    if(prefConfig.enableQtDialog){
+                        //todo 展示快捷菜单
+                        gestures.showGameMenu(context);
+                    }else{
+                        context.toggleMouseEmulation();
+                    }
+                }
+            }
             context.inputMap &= ~ControllerPacket.BACK_FLAG;
             break;
         case KeyEvent.KEYCODE_DPAD_LEFT:
@@ -2933,6 +2963,15 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
     }
 
     @Override
+    public void reportControllerMotion(int controllerId, byte motionType, float motionX, float motionY, float motionZ) {
+        GenericControllerContext context = usbDeviceContexts.get(controllerId);
+        if (context == null) {
+            return;
+        }
+        conn.sendControllerMotionEvent((byte)context.controllerNumber, motionType, motionX, motionY, motionZ);
+    }
+
+    @Override
     public void deviceRemoved(AbstractController controller) {
         UsbDeviceContext context = usbDeviceContexts.get(controller.getControllerId());
         if (context != null) {
@@ -3154,8 +3193,10 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
                     lightsSession.close();
                 }
             }
-
-            backgroundThreadHandler.removeCallbacks(batteryStateUpdateRunnable);
+            //是否上报电池状态
+            if(prefConfig.enableBatteryReport){
+                backgroundThreadHandler.removeCallbacks(batteryStateUpdateRunnable);
+            }
         }
 
         @Override
@@ -3281,7 +3322,10 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
                     reportedType, supportedButtonFlags, capabilities);
 
             // After reporting arrival to the host, send initial battery state and begin monitoring
-            backgroundThreadHandler.post(batteryStateUpdateRunnable);
+            //是否上报电池状态
+            if(prefConfig.enableBatteryReport){
+                backgroundThreadHandler.post(batteryStateUpdateRunnable);
+            }
         }
 
         public void migrateContext(InputDeviceContext oldContext) {
@@ -3315,7 +3359,10 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
             enableSensors();
 
             // Refresh battery state and start the battery state polling again
-            backgroundThreadHandler.post(batteryStateUpdateRunnable);
+            //是否上报电池状态
+            if(prefConfig.enableBatteryReport){
+                backgroundThreadHandler.post(batteryStateUpdateRunnable);
+            }
         }
 
         public void disableSensors() {
