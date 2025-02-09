@@ -83,4 +83,6 @@ public abstract class AbstractController {
     protected void notifyDeviceAdded() {
         listener.deviceAdded(this);
     }
+
+    public void sendCommand(byte[] data){};
 }
