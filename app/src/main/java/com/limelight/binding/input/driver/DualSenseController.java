@@ -11,20 +11,26 @@ import java.nio.ByteBuffer;
 
 public class DualSenseController extends AbstractDualSenseController {
    private static final int[] SUPPORTED_VENDORS = {
-           0x054C,
-           0x0CE6,
-           0x0DF2,
+           0x054C,//索尼
+           0x1532//雷蛇
+   };
+   private static final int[] SUPPORTED_PRODUCTS = {
+           0x0CE6,//ps5
+           0x0DF2,//ps5 edge
+           0x100b,//有线模式 雷蛇幻影战狼v2pro
+           0x100c//无线模式 雷蛇幻影战狼v2pro
    };
 
    public static boolean canClaimDevice(UsbDevice device) {
       for (int supportedVid : SUPPORTED_VENDORS) {
-         if (device.getVendorId() == supportedVid &&
-                 device.getInterfaceCount() >= 1
-         ) {
-            return true;
+         for (int supportedPid:SUPPORTED_PRODUCTS) {
+            if (device.getVendorId() == supportedVid
+                    && device.getProductId()==supportedPid
+                    && device.getInterfaceCount() >= 1) {
+               return true;
+            }
          }
       }
-
       return false;
    }
 
