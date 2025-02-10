@@ -26,16 +26,16 @@ public class PreferenceConfiguration {
     private static final String LEGACY_RES_FPS_PREF_STRING = "list_resolution_fps";
     private static final String LEGACY_ENABLE_51_SURROUND_PREF_STRING = "checkbox_51_surround";
 
-    static final String RESOLUTION_PREF_STRING = "list_resolution";
-    static final String FPS_PREF_STRING = "list_fps";
-    static final String BITRATE_PREF_STRING = "seekbar_bitrate_kbps";
-    private static final String BITRATE_PREF_OLD_STRING = "seekbar_bitrate";
+    public static final String RESOLUTION_PREF_STRING = "list_resolution";
+    public static final String FPS_PREF_STRING = "list_fps";
+    public static final String BITRATE_PREF_STRING = "seekbar_bitrate_kbps";
+    public static final String BITRATE_PREF_OLD_STRING = "seekbar_bitrate";
     private static final String STRETCH_PREF_STRING = "checkbox_stretch_video";
     private static final String SOPS_PREF_STRING = "checkbox_enable_sops";
     private static final String DISABLE_TOASTS_PREF_STRING = "checkbox_disable_warnings";
     private static final String HOST_AUDIO_PREF_STRING = "checkbox_host_audio";
     private static final String DEADZONE_PREF_STRING = "seekbar_deadzone";
-    private static final String OSC_OPACITY_PREF_STRING = "seekbar_osc_opacity";
+    public static final String OSC_OPACITY_PREF_STRING = "seekbar_osc_opacity";
     private static final String LANGUAGE_PREF_STRING = "list_languages";
     private static final String SMALL_ICONS_PREF_STRING = "checkbox_small_icon_mode";
     private static final String MULTI_CONTROLLER_PREF_STRING = "checkbox_multi_controller";
@@ -75,7 +75,7 @@ public class PreferenceConfiguration {
     //VR模式
     private static final String CHECKBOX_ENABLE_SBS = "checkbox_enable_sbs";
     //竖屏模式
-    private static final String CHECKBOX_ENABLE_PORTRAIT = "checkbox_enable_portrait";
+    public static final String CHECKBOX_ENABLE_PORTRAIT = "checkbox_enable_portrait";
     //屏幕特殊按键
     private static final String CHECKBOX_ENABLE_KEYBOARD = "checkbox_enable_keyboard";
 
@@ -86,7 +86,7 @@ public class PreferenceConfiguration {
     private static final String CHECKBOX_CHECKBOX_ENABLE_ANALOG_STICK_NEW="checkbox_enable_analog_stick_new";
 
     //触控屏幕灵敏度
-    private static final String TOUCH_SENSITIVITY="seekbar_touch_sensitivity_opacity_x";
+    public static final String TOUCH_SENSITIVITY="seekbar_touch_sensitivity_opacity_x";
 
     static final String DEFAULT_RESOLUTION = "1280x720";
     static final String DEFAULT_FPS = "60";
@@ -161,6 +161,8 @@ public class PreferenceConfiguration {
     public boolean enablePerfOverlayLite;
 
     public boolean enablePerfOverlayLiteDialog;
+    //额外扩展参数
+    public boolean enablePerfOverlayLiteExt;
 
     public boolean enableLatencyToast;
     //软键盘
@@ -171,6 +173,9 @@ public class PreferenceConfiguration {
     public boolean enableKeyboard;
     //修复JoyCon十字键
     public boolean enableJoyConFix;
+
+    //是否上报手柄的电池信息
+    public boolean enableBatteryReport;
 
     //自由摇杆啊
     public boolean enableNewAnalogStick;
@@ -230,6 +235,7 @@ public class PreferenceConfiguration {
     public boolean enableSbs;
     public boolean bindAllUsb;
     public boolean mouseEmulation;
+    public int mouseEmulationGameMenu;
     public AnalogStickForScrolling analogStickForScrolling;
     public boolean mouseNavButtons;
     public boolean unlockFps;
@@ -256,8 +262,8 @@ public class PreferenceConfiguration {
     //部分页面主题色白色
     public boolean uiThemeColorWhite;
 
-    //五指打开输入法软键盘
-    public boolean enableFiveFingersOperate;
+    //打开输入法软键盘的手指数量
+    public int quickSoftKeyboardFingers;
 
     //启用悬浮球
     public boolean enableAXFloating;
@@ -276,6 +282,65 @@ public class PreferenceConfiguration {
 
     //显示无障碍模式的键值
     public boolean enableAccessibilityShowLog;
+
+    //新款游戏菜单
+    public boolean enableGameMenuNew;
+
+    //亮屏自动回连
+    public int enableScreenOnAuto;
+
+    //使用自定义主屏幕背景
+    public boolean enableScreenBg;
+
+    //主屏幕背景高斯模糊
+    public boolean enableScreenObscure;
+
+    //主屏幕文本
+    public String screenLabel;
+
+    //设备静音
+    public boolean audioMute;
+
+    //忽略应用列表的弹出菜单
+    public boolean passAppMenu;
+
+    //隐藏首页logo
+    public boolean hide_screen_logo;
+
+    //虚拟按键正常模式的颜色
+    public int virtualkeyViewNormalColor;
+
+    //雷蛇虚拟显示器
+    public boolean razerVD;
+
+    //内置的虚拟按键布局
+    public int virtualKeyboardFileUsed;
+
+    //强制强烈震动
+    public boolean enableForceStrongVibrations;
+
+    //震动停止开关
+    public boolean enableForceStrongVibrationsStop;
+
+    //显示震动信息HUD
+    public boolean showRumbleHUD;
+
+    //ds5自适应扳机模式
+    public int ds5TriggerMode;
+    //ds5自适应扳机震动强度
+    public int ds5TriggerStrength;
+    //ds5自适应扳机频率
+    public int ds5TriggerFrequency;
+    //ds5自适应扳机开始位置
+    public int ds5TriggerStart;
+    //ds5自适应扳机结束位置
+    public int ds5TriggerEnd;
+
+    //usb手柄驱动 上报陀螺仪信息
+    public boolean usbGyroscopeReport;
+
+    //虚拟手柄按键 缩放系数
+    public int virtualGamePadScaleFactor;
 
     public static boolean isNativeResolution(int width, int height) {
         // It's not a native resolution if it matches an existing resolution option
@@ -706,6 +771,7 @@ public class PreferenceConfiguration {
         config.enablePip = prefs.getBoolean(ENABLE_PIP_PREF_STRING, DEFAULT_ENABLE_PIP);
         config.enablePerfOverlay = prefs.getBoolean(ENABLE_PERF_OVERLAY_STRING, DEFAULT_ENABLE_PERF_OVERLAY);
         config.enablePerfOverlayLite=prefs.getBoolean("checkbox_enable_perf_overlay_lite",DEFAULT_ENABLE_PERF_OVERLAY);
+        config.enablePerfOverlayLiteExt=prefs.getBoolean("checkbox_enable_perf_overlay_lite_ext",true);
         config.bindAllUsb = prefs.getBoolean(BIND_ALL_USB_STRING, DEFAULT_BIND_ALL_USB);
         config.mouseEmulation = prefs.getBoolean(MOUSE_EMULATION_STRING, DEFAULT_MOUSE_EMULATION);
         config.mouseNavButtons = prefs.getBoolean(MOUSE_NAV_BUTTONS_STRING, DEFAULT_MOUSE_NAV_BUTTONS);
@@ -728,6 +794,8 @@ public class PreferenceConfiguration {
         config.enableJoyConFix=prefs.getBoolean("checkbox_enable_joyconfix",false);
         //全键盘透明度
         config.oscKeyboardOpacity=prefs.getInt("seekbar_keyboard_axi_opacity",DEFAULT_OPACITY);
+
+        config.enableBatteryReport=prefs.getBoolean("checkbox_gamepad_enable_battery_report",true);
 
         config.enableOnScreenStyleOfficial=prefs.getBoolean("checkbox_onscreen_style_official",false);
 
@@ -775,7 +843,7 @@ public class PreferenceConfiguration {
         config.mouseTouchPadSensitityY=prefs.getInt("seekbar_mouse_touchpad_sensitivity_y_opacity",100);
 
         config.uiThemeColorWhite=prefs.getBoolean("checkbox_ui_theme_white",true);
-        config.enableFiveFingersOperate=prefs.getBoolean("checkbox_five_fingers_operate",true);
+        config.quickSoftKeyboardFingers=prefs.getInt("touch_number_quick_soft_keyboard",0);
 
         config.enableAXFloating=prefs.getBoolean("checkbox_enable_ax_floating",false);
         config.enableAXFloatingOperate=prefs.getBoolean("checkbox_enable_ax_floating_operate",false);
@@ -787,6 +855,46 @@ public class PreferenceConfiguration {
         config.enableFlipRumbleFF=prefs.getBoolean("checkbox_flip_rumble_ff",false);
 
         config.enableAccessibilityShowLog=prefs.getBoolean("checkbox_enable_accessibility_show_log",false);
+
+        config.enableGameMenuNew=prefs.getBoolean("checkbox_enable_game_menu_new",true);
+
+        config.enableScreenOnAuto=prefs.getInt("enable_screen_on_auto",0);
+
+        config.enableScreenBg=prefs.getBoolean("checkbox_enable_screen_bg",false);
+
+        config.enableScreenObscure=prefs.getBoolean("checkbox_enable_screen_obscure",true);
+
+        config.screenLabel=prefs.getString("change_screen_label_key","");
+
+        config.mouseEmulationGameMenu=prefs.getInt("ax_quick_game_menu_key",0);
+
+        config.audioMute=prefs.getBoolean("ax_audio_mute",false);
+
+        config.passAppMenu=prefs.getBoolean("checkbox_enable_pass_menu",false);
+
+        config.hide_screen_logo=prefs.getBoolean("checkbox_enable_screen_hide_logo",false);
+
+        config.virtualkeyViewNormalColor=prefs.getInt("virtual_key_view_normal_color",0xF0888888);
+
+        config.virtualKeyboardFileUsed=prefs.getInt("virtual_Key_board_file_used",0);
+
+        config.enableForceStrongVibrations=prefs.getBoolean("enable_force_strong_vibrations",false);
+
+        config.enableForceStrongVibrationsStop=prefs.getBoolean("enable_force_strong_vibrations_stop",false);
+
+        config.showRumbleHUD=prefs.getBoolean("rumble_HUD_show",false);
+
+        config.razerVD=prefs.getBoolean("razerVD",false);
+
+        config.ds5TriggerMode=prefs.getInt("ds5TriggerMode",0);
+        config.ds5TriggerStrength=prefs.getInt("ds5TriggerStrength",230);
+        config.ds5TriggerFrequency=prefs.getInt("ds5TriggerFrequency",10);
+        config.ds5TriggerStart=prefs.getInt("ds5TriggerStart",40);
+        config.ds5TriggerEnd=prefs.getInt("ds5TriggerEnd",100);
+
+        config.usbGyroscopeReport=prefs.getBoolean("usbGyroscopeReport",true);
+
+        config.virtualGamePadScaleFactor=prefs.getInt("virtualGamePadScaleFactor",100);
 
         config.absoluteMouseMode = prefs.getBoolean(ABSOLUTE_MOUSE_MODE_PREF_STRING, DEFAULT_ABSOLUTE_MOUSE_MODE);
         config.enableAudioFx = prefs.getBoolean(ENABLE_AUDIO_FX_PREF_STRING, DEFAULT_ENABLE_AUDIO_FX);
