@@ -1,3 +1,10 @@
+# Moonlight安卓端 阿西西修改版 quest V76+ Fix
+## 基于Moonlight Android阿西西修改版开源代码（12.1-241017）适配quest3 v76+，修改参考https://github.com/Abyss-c0re/moonlight-android 。
+## 密码的meta能不能放过我这一次，下辈子我只想做个不会闪退的孩子😭
+
+# Moonlight Android (Assisi Modified Version) quest V76+ Fix
+## Adapted to quest3 v76+ based on the open-source code of Moonlight Android (Assisi Modified Version) (12.1-241017). The modification refers to https://github.com/Abyss-c0re/moonlight-android.
+
 # Moonlight Android阿西西修改版
 ## 此项目实现对官方Moonlight安卓端功能修改<br>
 ### 如果你特别喜欢某些功能，可以自行提取相关代码，提交到官方库合并请求，无需备注来源于此项目<br>
