@@ -2,9 +2,9 @@ name: Build APK
 
 on:
   push:
-    branches: [main]  # 或你的开发分支
+    branches: [master]  # 或你的开发分支
   pull_request:
-    branches: [main]
+    branches: [master]
   workflow_dispatch:
 
 jobs:
