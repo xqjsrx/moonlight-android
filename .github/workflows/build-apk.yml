@@ -43,6 +43,9 @@ jobs:
       - name: List all build output directories
         run: |
           find . -type d -name "outputs"
+      
+      - name: List app/build/outputs/ directory
+        run: ls -R app/build/outputs/
 
       - name: List app/build directory
         run: ls -R app/build/
