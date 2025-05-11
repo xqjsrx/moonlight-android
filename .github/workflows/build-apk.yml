@@ -36,9 +36,13 @@ jobs:
       - name: Build debug APK
         run: ./gradlew assembleDebug
 
-      - name: Upload APK
-        uses: actions/upload-artifact@v2
-        with:
-          name: debug-apk
-          path: app/build/outputs/apk/debug/*.apk
+      # - name: Debug connection
+      #   run: |
+      #     curl -I https://api.github.com/repos/actions/upload-artifact
+
+      # - name: Upload APK
+      #   uses: actions/upload-artifact@v3
+      #   with:
+      #     name: debug-apk
+      #     path: app/build/outputs/apk/debug/*.apk
 
