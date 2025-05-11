@@ -26,9 +26,13 @@ jobs:
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
-
+      
+      - name: Install required NDK version
+        run: sdkmanager "ndk;27.0.12077973"
+      
       - name: Set up local.properties with NDK path
-        run: echo "ndk.dir=$ANDROID_NDK_ROOT" > local.properties
+        run: echo "ndk.dir=$ANDROID_SDK_ROOT/ndk/27.0.12077973" > local.properties
+
 
       - name: Make gradlew executable
         run: chmod +x ./gradlew
