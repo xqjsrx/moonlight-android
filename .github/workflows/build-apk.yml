@@ -40,8 +40,12 @@ jobs:
       - name: Build debug APK
         run: ./gradlew assembleDebug
 
-      - name: List APK files
-        run: ls app/build/outputs/apk/debug/
+      - name: List all build output directories
+        run: |
+          find . -type d -name "outputs"
+
+      - name: List app/build directory
+        run: ls -R app/build/
 
       - name: Debug connection
         run: |
